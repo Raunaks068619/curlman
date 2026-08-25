@@ -21,6 +21,16 @@
 
 API Panel lives in the macOS menu bar. Press Command-Shift-C from anywhere, paste a cURL command, edit the request, send it, inspect the formatted response, and recover every previous attempt from automatic local history.
 
+## See it in action
+
+<p align="center">
+  <a href="https://github.com/Raunaks068619/api-panel/releases/download/v0.1.0/API-Panel-POST-Demo.mp4">
+    <img src="Media/API-Panel-POST-Demo.gif" alt="Testing a POST API with API Panel" width="720">
+  </a>
+</p>
+
+Paste a POST request as cURL, adjust it if needed, and get a formatted response in seconds. Click the preview for the full-quality video.
+
 ## Download
 
 ### [Download the latest API Panel DMG](https://github.com/Raunaks068619/api-panel/releases/latest/download/API-Panel.dmg)
