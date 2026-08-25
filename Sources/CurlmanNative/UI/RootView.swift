@@ -249,46 +249,54 @@ private struct CompactPanelView: View {
     let dragAction: (NSEvent) -> Void
 
     var body: some View {
-        HStack(spacing: 7) {
-            WindowControl(color: .red, symbol: "xmark", help: "Close to menu bar", action: closeAction)
-            WindowControl(color: .yellow, symbol: "plus", help: "Restore panel", action: restoreAction)
-            Picker("Method", selection: $model.draft.method) {
-                ForEach(HTTPMethod.allCases) { method in
-                    Text(method.rawValue).tag(method)
+        ZStack {
+            HStack(spacing: 7) {
+                WindowControl(color: .red, symbol: "xmark", help: "Close to menu bar", action: closeAction)
+                WindowControl(color: .yellow, symbol: "plus", help: "Restore panel", action: restoreAction)
+                Picker("Method", selection: $model.draft.method) {
+                    ForEach(HTTPMethod.allCases) { method in
+                        Text(method.rawValue).tag(method)
+                    }
                 }
-            }
-            .labelsHidden()
-            .frame(width: 76)
+                .labelsHidden()
+                .frame(width: 76)
 
-            CurlTextField(
-                value: model.draft.urlString,
-                placeholder: "Paste URL or curl…",
-                onChange: model.updateURLInput,
-                onCurlPaste: { command in
-                    model.importCurl(command)
+                CurlTextField(
+                    value: model.draft.urlString,
+                    placeholder: "Paste URL or curl…",
+                    onChange: model.updateURLInput,
+                    onCurlPaste: { command in
+                        model.importCurl(command)
+                        restoreAction()
+                    }
+                )
+                .frame(maxWidth: .infinity)
+                .frame(height: 23)
+                .accessibilityLabel("Compact request URL or curl command")
+
+                Button {
+                    model.send()
                     restoreAction()
+                } label: {
+                    Image(systemName: model.isSending ? "stop.fill" : "paperplane.fill")
+                        .frame(width: 18, height: 18)
                 }
-            )
-            .frame(maxWidth: .infinity)
-            .frame(height: 23)
-            .accessibilityLabel("Compact request URL or curl command")
-
-            Button {
-                model.send()
-                restoreAction()
-            } label: {
-                Image(systemName: model.isSending ? "stop.fill" : "paperplane.fill")
-                    .frame(width: 18, height: 18)
+                .buttonStyle(.borderless)
+                .keyboardShortcut(.return, modifiers: .command)
+                .help(model.isSending ? "Cancel request" : "Send request (Command-Return)")
             }
-            .buttonStyle(.borderless)
-            .keyboardShortcut(.return, modifiers: .command)
-            .help(model.isSending ? "Cancel request" : "Send request (Command-Return)")
+            .padding(.horizontal, 12)
 
-            WindowDragRegion(dragAction: dragAction)
-                .frame(width: 14, height: 30)
-                .help("Drag panel")
+            VStack(spacing: 0) {
+                WindowDragRegion(dragAction: dragAction)
+                    .frame(height: 8)
+                Spacer(minLength: 0)
+                WindowDragRegion(dragAction: dragAction)
+                    .frame(height: 8)
+            }
+            .contentShape(Rectangle())
+            .help("Drag panel")
         }
-        .padding(.horizontal, 12)
         .background(.regularMaterial)
     }
 }

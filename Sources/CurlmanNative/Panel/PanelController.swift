@@ -46,6 +46,10 @@ final class PanelController: NSWindowController, NSWindowDelegate {
         )
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         let containerView = NSView()
+        containerView.wantsLayer = true
+        containerView.layer?.cornerRadius = 12
+        containerView.layer?.cornerCurve = .continuous
+        containerView.layer?.masksToBounds = true
         containerView.addSubview(materialView)
         containerView.addSubview(hostingView, positioned: .above, relativeTo: materialView)
         NSLayoutConstraint.activate([
@@ -177,18 +181,22 @@ final class PanelController: NSWindowController, NSWindowDelegate {
 
     private func configureCompactWindow(_ window: NSWindow) {
         window.styleMask.remove([.titled, .fullSizeContentView, .resizable])
+        window.isMovableByWindowBackground = true
         window.minSize = Self.compactSize
         window.maxSize = Self.compactSize
+        window.invalidateShadow()
     }
 
     private func configureExpandedWindow(_ window: NSWindow) {
         window.styleMask.insert([.titled, .fullSizeContentView, .resizable])
+        window.isMovableByWindowBackground = false
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.titlebarSeparatorStyle = .none
         Self.hideStandardWindowButtons(on: window)
         window.minSize = Self.expandedMinimumSize
         window.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        window.invalidateShadow()
     }
 
     private static func hideStandardWindowButtons(on window: NSWindow) {
