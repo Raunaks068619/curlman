@@ -26,12 +26,29 @@ struct RequestView: View {
                     .accessibilityAddTraits(model.requestSection == section ? .isSelected : [])
                 }
                 Spacer()
-                if model.requestSection == .body, model.draft.bodyKind == .json {
-                    Button(action: model.formatRequestBody) {
-                        Label("Format", systemImage: "text.alignleft")
+                if model.requestSection == .body {
+                    Picker("Body type", selection: $model.draft.bodyKind) {
+                        ForEach(RequestBodyKind.allCases) { kind in
+                            Text(kind.rawValue).tag(kind)
+                        }
                     }
-                    .buttonStyle(.borderless)
-                    .keyboardShortcut("f", modifiers: [.command, .shift])
+                    .labelsHidden()
+                    .frame(width: 96)
+
+                    if model.draft.bodyKind == .json {
+                        Button(action: model.formatRequestBody) {
+                            Label("Format", systemImage: "text.alignleft")
+                        }
+                        .buttonStyle(.borderless)
+                        .keyboardShortcut("f", modifiers: [.command, .shift])
+
+                        if !model.draft.body.isEmpty {
+                            Image(systemName: model.draft.parsedJSONBody == nil ? "xmark.circle.fill" : "checkmark.circle.fill")
+                                .foregroundStyle(model.draft.parsedJSONBody == nil ? .red : .green)
+                                .help(model.draft.parsedJSONBody == nil ? "Invalid JSON" : "Valid JSON")
+                                .accessibilityLabel(model.draft.parsedJSONBody == nil ? "Invalid JSON" : "Valid JSON")
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 12)
@@ -67,26 +84,7 @@ private struct BodyEditor: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Picker("Body type", selection: $model.draft.bodyKind) {
-                    ForEach(RequestBodyKind.allCases) { kind in Text(kind.rawValue).tag(kind) }
-                }
-                .labelsHidden()
-                .frame(width: 104)
-                Spacer()
-                if model.draft.bodyKind == .json, !model.draft.body.isEmpty {
-                    Label(model.draft.parsedJSONBody == nil ? "Invalid JSON" : "Valid JSON",
-                          systemImage: model.draft.parsedJSONBody == nil ? "xmark.circle.fill" : "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(model.draft.parsedJSONBody == nil ? .red : .green)
-                }
-            }
-            .padding(.horizontal, 12)
-            .frame(height: 38)
-            .background(Color(nsColor: .controlBackgroundColor))
-            .overlay(alignment: .bottom) { Divider() }
-
+        Group {
             if model.draft.bodyKind == .none {
                 VStack(spacing: 8) {
                     Image(systemName: "doc.plaintext").font(.title2).foregroundStyle(.tertiary)

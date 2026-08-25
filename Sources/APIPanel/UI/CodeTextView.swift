@@ -230,8 +230,5 @@ private final class LineNumberRulerView: NSRulerView {
             index = next
             line += 1
         }
-
-        NSColor.separatorColor.setFill()
-        NSRect(x: ruleThickness - 0.5, y: 0, width: 0.5, height: bounds.height).fill()
     }
 }
