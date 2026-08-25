@@ -51,6 +51,32 @@ final class CurlParserTests: XCTestCase {
         XCTAssertFalse(result.warnings.contains { $0.contains("--location") })
     }
 
+    func testParsesTemporalWorkflowCurlWithURLFlagAndFormattedBody() throws {
+        let command = #"""
+        curl --request POST \
+          --url 'https://asia-south1.api.boltic.io/service/webhook/temporal/v1.0/97b7ac1b-a7e6-4be7-9278-df4e99d5d353/workflows/execute/ab2ceff2-66e5-4ef6-8384-6ccd2037eeb7' \
+          --header 'content-type: application/json' \
+          --data-raw '{
+            "target": "sales-channel-live-products",
+            "run_time": "2026-08-25 05:29:00+00",
+            "calls": [["sales-channel-live-products", "2026-08-25 05:29:00+00"]],
+            "caller": "manual-test",
+            "user_defined_context": null
+          }'
+        """#
+
+        let result = try parser.parse(command)
+
+        XCTAssertEqual(
+            result.request.urlString,
+            "https://asia-south1.api.boltic.io/service/webhook/temporal/v1.0/97b7ac1b-a7e6-4be7-9278-df4e99d5d353/workflows/execute/ab2ceff2-66e5-4ef6-8384-6ccd2037eeb7"
+        )
+        XCTAssertEqual(result.request.method, .post)
+        XCTAssertEqual(result.request.bodyKind, .json)
+        XCTAssertNotNil(result.request.parsedJSONBody)
+        XCTAssertTrue(result.request.body.contains("\n"))
+    }
+
     func testGetMovesDataIntoQueryItems() throws {
         let result = try parser.parse("curl -G https://example.com/search --data 'q=swift&limit=5'")
 

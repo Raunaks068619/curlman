@@ -29,7 +29,12 @@ if [[ -e "$DMG_PATH" ]]; then
     rm -f "$DMG_PATH"
 fi
 
+STAGE_KB="$(du -sk "$DMG_STAGE" | awk '{print $1}')"
+DMG_SIZE_MB="$(( (STAGE_KB + 1023) / 1024 + 20 ))"
+
 hdiutil create \
+    -size "${DMG_SIZE_MB}m" \
+    -fs HFS+ \
     -volname "API Panel" \
     -srcfolder "$DMG_STAGE" \
     -ov \
@@ -39,4 +44,3 @@ hdiutil create \
 rm -rf "$DMG_STAGE"
 echo "$APP_BUNDLE"
 echo "$DMG_PATH"
-

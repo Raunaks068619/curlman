@@ -253,13 +253,19 @@ private struct CompactPanelView: View {
                 value: model.draft.urlString,
                 placeholder: "Paste URL or curl…",
                 onChange: model.updateURLInput,
-                onCurlPaste: model.importCurl
+                onCurlPaste: { command in
+                    model.importCurl(command)
+                    restoreAction()
+                }
             )
             .frame(maxWidth: .infinity)
             .frame(height: 23)
             .accessibilityLabel("Compact request URL or curl command")
 
-            Button(action: model.send) {
+            Button {
+                model.send()
+                restoreAction()
+            } label: {
                 Image(systemName: model.isSending ? "stop.fill" : "paperplane.fill")
                     .frame(width: 18, height: 18)
             }
