@@ -32,7 +32,7 @@ private struct SyntaxTextEditor: NSViewRepresentable {
         Coordinator(parent: self)
     }
 
-    func makeNSView(context: Context) -> NSScrollView {
+    func makeNSView(context: Context) -> CodeEditorContainerView {
         let storage = NSTextStorage()
         let layoutManager = NSLayoutManager()
         let container = NSTextContainer(size: NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
@@ -68,23 +68,24 @@ private struct SyntaxTextEditor: NSViewRepresentable {
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.documentView = editor
-        scrollView.hasVerticalRuler = true
-        scrollView.rulersVisible = true
-        scrollView.verticalRulerView = LineNumberRulerView(textView: editor, scrollView: scrollView)
+
+        let gutter = LineNumberGutterView(textView: editor, scrollView: scrollView)
+        let editorContainer = CodeEditorContainerView(scrollView: scrollView, editor: editor, gutter: gutter)
 
         context.coordinator.editor = editor
+        context.coordinator.gutter = gutter
         context.coordinator.highlight(editor)
-        return scrollView
+        return editorContainer
     }
 
-    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+    func updateNSView(_ editorContainer: CodeEditorContainerView, context: Context) {
         context.coordinator.parent = self
-        guard let editor = scrollView.documentView as? NSTextView else { return }
+        let editor = editorContainer.editor
         editor.isEditable = isEditable
         if editor.string != text {
             editor.string = text
             context.coordinator.highlight(editor)
-            (scrollView.verticalRulerView as? LineNumberRulerView)?.needsDisplay = true
+            editorContainer.gutter.needsDisplay = true
         }
     }
 
@@ -92,6 +93,7 @@ private struct SyntaxTextEditor: NSViewRepresentable {
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: SyntaxTextEditor
         weak var editor: NSTextView?
+        weak var gutter: LineNumberGutterView?
         private var isHighlighting = false
 
         init(parent: SyntaxTextEditor) {
@@ -102,7 +104,7 @@ private struct SyntaxTextEditor: NSViewRepresentable {
             guard !isHighlighting, let editor = notification.object as? NSTextView else { return }
             parent.text = editor.string
             highlight(editor)
-            (editor.enclosingScrollView?.verticalRulerView as? LineNumberRulerView)?.needsDisplay = true
+            gutter?.needsDisplay = true
         }
 
         func highlight(_ editor: NSTextView) {
@@ -146,14 +148,49 @@ private struct SyntaxTextEditor: NSViewRepresentable {
     }
 }
 
-private final class LineNumberRulerView: NSRulerView {
+private final class CodeEditorContainerView: NSView {
+    let scrollView: NSScrollView
+    let editor: NSTextView
+    let gutter: LineNumberGutterView
+
+    init(scrollView: NSScrollView, editor: NSTextView, gutter: LineNumberGutterView) {
+        self.scrollView = scrollView
+        self.editor = editor
+        self.gutter = gutter
+        super.init(frame: .zero)
+
+        wantsLayer = true
+        layer?.masksToBounds = true
+        gutter.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(gutter)
+        addSubview(scrollView)
+
+        NSLayoutConstraint.activate([
+            gutter.leadingAnchor.constraint(equalTo: leadingAnchor),
+            gutter.topAnchor.constraint(equalTo: topAnchor),
+            gutter.bottomAnchor.constraint(equalTo: bottomAnchor),
+            gutter.widthAnchor.constraint(equalToConstant: 42),
+            scrollView.leadingAnchor.constraint(equalTo: gutter.trailingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+}
+
+private final class LineNumberGutterView: NSView {
     private weak var textView: NSTextView?
+    private weak var scrollView: NSScrollView?
 
     init(textView: NSTextView, scrollView: NSScrollView) {
         self.textView = textView
-        super.init(scrollView: scrollView, orientation: .verticalRuler)
-        clientView = textView
-        ruleThickness = 42
+        self.scrollView = scrollView
+        super.init(frame: .zero)
         scrollView.contentView.postsBoundsChangedNotifications = true
         NotificationCenter.default.addObserver(
             self,
@@ -181,7 +218,9 @@ private final class LineNumberRulerView: NSRulerView {
         needsDisplay = true
     }
 
-    override func drawHashMarksAndLabels(in rect: NSRect) {
+    override var isFlipped: Bool { true }
+
+    override func draw(_ dirtyRect: NSRect) {
         guard let textView,
               let layoutManager = textView.layoutManager,
               let textContainer = textView.textContainer,
@@ -207,7 +246,7 @@ private final class LineNumberRulerView: NSRulerView {
             let label = "1" as NSString
             let size = label.size(withAttributes: attributes)
             label.draw(
-                at: NSPoint(x: ruleThickness - size.width - 10, y: textView.textContainerInset.height + 1),
+                at: NSPoint(x: bounds.width - size.width - 10, y: textView.textContainerInset.height + 1),
                 withAttributes: attributes
             )
             return
@@ -221,7 +260,7 @@ private final class LineNumberRulerView: NSRulerView {
             let y = fragment.minY + textView.textContainerInset.height - visibleRect.minY
             let label = "\(line)" as NSString
             let size = label.size(withAttributes: attributes)
-            label.draw(at: NSPoint(x: ruleThickness - size.width - 10, y: y + 1), withAttributes: attributes)
+            label.draw(at: NSPoint(x: bounds.width - size.width - 10, y: y + 1), withAttributes: attributes)
 
             if index >= source.length { break }
             let range = source.lineRange(for: NSRange(location: index, length: 0))

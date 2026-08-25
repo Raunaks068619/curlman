@@ -11,7 +11,7 @@ struct ResponseView: View {
                 Label(response.statusLabel, systemImage: statusSymbol)
                     .font(.headline)
                     .foregroundStyle(statusColor)
-                Text(response.duration, format: .number.precision(.fractionLength(0...3)))
+                Text("\(response.duration.formatted(.number.precision(.fractionLength(0...3)))) s")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                 Text(ByteCountFormatter.string(fromByteCount: Int64(response.receivedByteCount), countStyle: .file))
@@ -30,26 +30,37 @@ struct ResponseView: View {
                     Label("Save", systemImage: "square.and.arrow.down")
                 }
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
             .frame(height: 46)
             .background(Color(nsColor: .controlBackgroundColor))
             .overlay(alignment: .bottom) { Divider() }
 
-            HStack {
-                Picker("Response view", selection: $model.responseSection) {
-                    Text("Pretty").tag(ResponseSection.pretty)
-                    Text("Raw").tag(ResponseSection.raw)
-                    Text("Headers  \(response.headers.count)").tag(ResponseSection.headers)
+            HStack(spacing: 2) {
+                ForEach(ResponseSection.allCases) { section in
+                    Button {
+                        model.responseSection = section
+                    } label: {
+                        Text(responseSectionLabel(section))
+                            .font(.system(size: 12, weight: model.responseSection == section ? .semibold : .regular))
+                            .padding(.horizontal, 12)
+                            .frame(height: 26)
+                            .background {
+                                if model.responseSection == section {
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .fill(Color(nsColor: .selectedContentBackgroundColor).opacity(0.22))
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(model.responseSection == section ? Color.primary : Color.secondary)
+                    .accessibilityAddTraits(model.responseSection == section ? .isSelected : [])
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(maxWidth: 340)
                 Spacer()
                 TextField("Find in response", text: $responseSearch)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 190)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 12)
             .frame(height: 42)
             .background(Color(nsColor: .windowBackgroundColor))
             .overlay(alignment: .bottom) { Divider() }
@@ -67,6 +78,14 @@ struct ResponseView: View {
             return response.headers.sorted { $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending }
                 .map { "\($0.key): \($0.value)" }
                 .joined(separator: "\n")
+        }
+    }
+
+    private func responseSectionLabel(_ section: ResponseSection) -> String {
+        switch section {
+        case .pretty: return "Pretty"
+        case .raw: return "Raw"
+        case .headers: return "Headers  \(response.headers.count)"
         }
     }
 
@@ -90,4 +109,3 @@ struct ResponseView: View {
         }
     }
 }
-
