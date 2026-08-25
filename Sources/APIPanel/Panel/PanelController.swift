@@ -19,6 +19,7 @@ final class PanelController: NSWindowController, NSWindowDelegate {
         )
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
+        panel.titlebarSeparatorStyle = .none
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.hasShadow = true
@@ -27,9 +28,7 @@ final class PanelController: NSWindowController, NSWindowDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
         panel.minSize = Self.expandedMinimumSize
-        panel.standardWindowButton(.closeButton)?.isHidden = true
-        panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
-        panel.standardWindowButton(.zoomButton)?.isHidden = true
+        Self.hideStandardWindowButtons(on: panel)
         super.init(window: panel)
         panel.delegate = self
         let materialView = NSVisualEffectView()
@@ -177,15 +176,25 @@ final class PanelController: NSWindowController, NSWindowDelegate {
     }
 
     private func configureCompactWindow(_ window: NSWindow) {
-        window.styleMask.remove(.resizable)
+        window.styleMask.remove([.titled, .fullSizeContentView, .resizable])
         window.minSize = Self.compactSize
         window.maxSize = Self.compactSize
     }
 
     private func configureExpandedWindow(_ window: NSWindow) {
-        window.styleMask.insert(.resizable)
+        window.styleMask.insert([.titled, .fullSizeContentView, .resizable])
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        Self.hideStandardWindowButtons(on: window)
         window.minSize = Self.expandedMinimumSize
         window.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+    }
+
+    private static func hideStandardWindowButtons(on window: NSWindow) {
+        window.standardWindowButton(.closeButton)?.isHidden = true
+        window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+        window.standardWindowButton(.zoomButton)?.isHidden = true
     }
 
     private func compactFrame(anchoredTo frame: NSRect) -> NSRect {

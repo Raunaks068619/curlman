@@ -278,9 +278,6 @@ private struct CompactPanelView: View {
                 .help("Drag panel")
         }
         .padding(.horizontal, 12)
-        .background {
-            VisualEffectView(material: .hudWindow)
-                .allowsHitTesting(false)
-        }
+        .background(.regularMaterial)
     }
 }
