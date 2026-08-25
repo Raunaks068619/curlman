@@ -238,22 +238,41 @@ private struct CompactPanelView: View {
     let dragAction: (NSEvent) -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 7) {
             WindowControl(color: .red, symbol: "xmark", help: "Close to menu bar", action: closeAction)
             WindowControl(color: .yellow, symbol: "plus", help: "Restore panel", action: restoreAction)
-            Text(model.draft.method.rawValue)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tint)
-            Text(model.draft.urlString.isEmpty ? "Paste URL or curl…" : model.draft.urlString)
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(model.draft.urlString.isEmpty ? Color.secondary : Color.primary)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-            Text("⌘⇧C").font(.caption2).foregroundStyle(.tertiary)
+            Picker("Method", selection: $model.draft.method) {
+                ForEach(HTTPMethod.allCases) { method in
+                    Text(method.rawValue).tag(method)
+                }
+            }
+            .labelsHidden()
+            .frame(width: 76)
+
+            CurlTextField(
+                value: model.draft.urlString,
+                placeholder: "Paste URL or curl…",
+                onChange: model.updateURLInput,
+                onCurlPaste: model.importCurl
+            )
+            .frame(maxWidth: .infinity)
+            .frame(height: 23)
+            .accessibilityLabel("Compact request URL or curl command")
+
+            Button(action: model.send) {
+                Image(systemName: model.isSending ? "stop.fill" : "paperplane.fill")
+                    .frame(width: 18, height: 18)
+            }
+            .buttonStyle(.borderless)
+            .keyboardShortcut(.return, modifiers: .command)
+            .help(model.isSending ? "Cancel request" : "Send request (Command-Return)")
+
+            WindowDragRegion(dragAction: dragAction)
+                .frame(width: 14, height: 30)
+                .help("Drag panel")
         }
         .padding(.horizontal, 12)
         .background {
-            WindowDragRegion(dragAction: dragAction)
             VisualEffectView(material: .hudWindow)
                 .allowsHitTesting(false)
         }

@@ -3,6 +3,8 @@ import SwiftUI
 
 @MainActor
 final class PanelController: NSWindowController, NSWindowDelegate {
+    private static let compactSize = NSSize(width: 420, height: 52)
+    private static let expandedMinimumSize = NSSize(width: 600, height: 400)
     private let model: AppModel
     private let defaults = UserDefaults.standard
     private var expandedFrame: NSRect?
@@ -24,7 +26,7 @@ final class PanelController: NSWindowController, NSWindowDelegate {
         panel.level = .floating
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
-        panel.minSize = NSSize(width: 600, height: 400)
+        panel.minSize = Self.expandedMinimumSize
         panel.standardWindowButton(.closeButton)?.isHidden = true
         panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         panel.standardWindowButton(.zoomButton)?.isHidden = true
@@ -99,13 +101,8 @@ final class PanelController: NSWindowController, NSWindowDelegate {
             expandedFrame = window.frame
             defaults.set(NSStringFromRect(window.frame), forKey: "expandedFrame")
             model.isCompact = true
-            window.minSize = NSSize(width: 360, height: 46)
-            let compact = NSRect(
-                x: window.frame.maxX - 360,
-                y: window.frame.maxY - 52,
-                width: 360,
-                height: 52
-            )
+            configureCompactWindow(window)
+            let compact = compactFrame(anchoredTo: window.frame)
             animateFrame(window, to: compact)
         }
         defaults.set(model.isCompact, forKey: "isCompact")
@@ -113,6 +110,10 @@ final class PanelController: NSWindowController, NSWindowDelegate {
 
     func windowDidMove(_ notification: Notification) { saveFrame() }
     func windowDidResize(_ notification: Notification) { if !model.isCompact { saveFrame() } }
+
+    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
+        model.isCompact ? Self.compactSize : frameSize
+    }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         hidePanel()
@@ -122,7 +123,7 @@ final class PanelController: NSWindowController, NSWindowDelegate {
     private func restoreExpanded() {
         guard let window else { return }
         model.isCompact = false
-        window.minSize = NSSize(width: 600, height: 400)
+        configureExpandedWindow(window)
         let stored = defaults.string(forKey: "expandedFrame").map(NSRectFromString)
         let target = expandedFrame ?? stored ?? NSRect(x: window.frame.minX, y: window.frame.minY, width: 780, height: 520)
         animateFrame(window, to: target)
@@ -130,14 +131,23 @@ final class PanelController: NSWindowController, NSWindowDelegate {
 
     private func restoreFrameOrPlaceTopRight() {
         guard let window else { return }
-        if let stored = defaults.string(forKey: "panelFrame") {
+        model.isCompact = defaults.bool(forKey: "isCompact")
+        if model.isCompact {
+            let storedExpanded = defaults.string(forKey: "expandedFrame").map(NSRectFromString)
+                ?? defaults.string(forKey: "panelFrame").map(NSRectFromString)
+                ?? window.frame
+            expandedFrame = storedExpanded
+            let storedCompact = defaults.string(forKey: "compactFrame").map(NSRectFromString)
+            let compact = storedCompact.map(normalizedCompactFrame) ?? compactFrame(anchoredTo: storedExpanded)
+            configureCompactWindow(window)
+            window.setFrame(compact, display: false)
+            recoverToVisibleScreen(window)
+        } else if let stored = defaults.string(forKey: "panelFrame") {
+            configureExpandedWindow(window)
             window.setFrame(NSRectFromString(stored), display: false)
-            model.isCompact = defaults.bool(forKey: "isCompact")
-            if model.isCompact {
-                window.minSize = NSSize(width: 360, height: 46)
-            }
             recoverToVisibleScreen(window)
         } else {
+            configureExpandedWindow(window)
             placeTopRight(window)
         }
     }
@@ -158,10 +168,37 @@ final class PanelController: NSWindowController, NSWindowDelegate {
 
     private func saveFrame() {
         guard let window else { return }
-        defaults.set(NSStringFromRect(window.frame), forKey: "panelFrame")
-        if !model.isCompact {
+        if model.isCompact {
+            defaults.set(NSStringFromRect(normalizedCompactFrame(window.frame)), forKey: "compactFrame")
+        } else {
+            defaults.set(NSStringFromRect(window.frame), forKey: "panelFrame")
             defaults.set(NSStringFromRect(window.frame), forKey: "expandedFrame")
         }
+    }
+
+    private func configureCompactWindow(_ window: NSWindow) {
+        window.styleMask.remove(.resizable)
+        window.minSize = Self.compactSize
+        window.maxSize = Self.compactSize
+    }
+
+    private func configureExpandedWindow(_ window: NSWindow) {
+        window.styleMask.insert(.resizable)
+        window.minSize = Self.expandedMinimumSize
+        window.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+    }
+
+    private func compactFrame(anchoredTo frame: NSRect) -> NSRect {
+        NSRect(
+            x: frame.maxX - Self.compactSize.width,
+            y: frame.maxY - Self.compactSize.height,
+            width: Self.compactSize.width,
+            height: Self.compactSize.height
+        )
+    }
+
+    private func normalizedCompactFrame(_ frame: NSRect) -> NSRect {
+        NSRect(origin: frame.origin, size: Self.compactSize)
     }
 
     private func animateAppearance(_ window: NSWindow) {
@@ -173,8 +210,10 @@ final class PanelController: NSWindowController, NSWindowDelegate {
         var startFrame = finalFrame
         startFrame.origin.x += 8
         startFrame.origin.y += 10
-        startFrame.size.width *= 0.985
-        startFrame.size.height *= 0.985
+        if !model.isCompact {
+            startFrame.size.width *= 0.985
+            startFrame.size.height *= 0.985
+        }
         window.setFrame(startFrame, display: false)
         window.alphaValue = 0
         NSAnimationContext.runAnimationGroup { context in
