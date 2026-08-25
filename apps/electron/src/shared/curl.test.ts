@@ -22,4 +22,26 @@ describe('cURL import and export', () => {
     expect(exported).toContain("--header 'X-Name: Raunak'");
     expect(exported).toContain("Sam'\\''s Mac");
   });
+
+  it('imports curl GET data-urlencode fields as query parameters', () => {
+    const result = parseCurl(`curl --get \\
+      'https://coach.co.za/ext/reco-extension/reco' \\
+      --data-urlencode 'recommendation_slug=similar-products' \\
+      --data-urlencode 'slug=tabby-bag-charm-198685064919' \\
+      --data-urlencode 'currency_code=ZAR' \\
+      -H 'Accept: application/json'`);
+
+    expect(result.request.method).toBe('GET');
+    expect(result.request.urlString).toBe('https://coach.co.za/ext/reco-extension/reco');
+    expect(result.request.queryItems.filter((item) => item.isEnabled)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'recommendation_slug', value: 'similar-products' }),
+        expect.objectContaining({ name: 'slug', value: 'tabby-bag-charm-198685064919' }),
+        expect.objectContaining({ name: 'currency_code', value: 'ZAR' }),
+      ]),
+    );
+    expect(result.request.headers).toEqual(expect.arrayContaining([expect.objectContaining({ name: 'Accept', value: 'application/json' })]));
+    expect(result.request.bodyKind).toBe('None');
+    expect(result.warnings).toEqual([]);
+  });
 });

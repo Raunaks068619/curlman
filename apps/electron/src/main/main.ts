@@ -20,10 +20,10 @@ let isCompact = false;
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
-    width: 960,
-    height: 680,
-    minWidth: 680,
-    minHeight: 460,
+    width: 880,
+    height: 580,
+    minWidth: 620,
+    minHeight: 400,
     show: false,
     skipTaskbar: true,
     title: 'Curlman',

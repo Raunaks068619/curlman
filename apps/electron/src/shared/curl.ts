@@ -50,6 +50,12 @@ export function parseCurl(command: string): CurlImportResult {
       const prefix = ['--data=', '--data-raw=', '--data-binary='].find((value) => token.startsWith(value)) ?? '';
       applyBody(token.slice(prefix.length), request);
       inferredPost = true;
+    } else if (token === '--data-urlencode') {
+      applyURLEncodedBody(nextValue(token), request, warnings);
+      inferredPost = true;
+    } else if (token.startsWith('--data-urlencode=')) {
+      applyURLEncodedBody(token.slice('--data-urlencode='.length), request, warnings);
+      inferredPost = true;
     } else if (token === '-u' || token === '--user') {
       applyBasicAuth(nextValue(token), request);
     } else if (token.startsWith('--user=')) {
@@ -203,6 +209,19 @@ function applyBody(value: string, request: RequestDraft): void {
   const contentType = request.headers.find((item) => item.name.toLowerCase() === 'content-type')?.value.toLowerCase();
   const firstCharacter = value.trim()[0];
   request.bodyKind = contentType?.includes('application/json') || firstCharacter === '{' || firstCharacter === '[' ? 'JSON' : 'Raw';
+}
+
+function applyURLEncodedBody(value: string, request: RequestDraft, warnings: string[]): void {
+  const separator = value.indexOf('=');
+  const fileMarker = value.indexOf('@');
+  if (fileMarker >= 0 && (separator < 0 || fileMarker < separator)) {
+    warnings.push('Ignored file-based --data-urlencode input for safety. Paste the value directly instead.');
+    return;
+  }
+  const encoded = separator < 0
+    ? encodeURIComponent(value)
+    : `${encodeURIComponent(value.slice(0, separator))}=${encodeURIComponent(value.slice(separator + 1))}`;
+  applyBody(encoded, request);
 }
 
 function applyBasicAuth(value: string, request: RequestDraft): void {

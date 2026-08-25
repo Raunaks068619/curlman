@@ -85,6 +85,28 @@ final class CurlParserTests: XCTestCase {
         XCTAssertEqual(result.request.queryItems.filter(\.isEnabled).count, 2)
     }
 
+    func testGetMovesDataURLEncodeFieldsIntoQueryItems() throws {
+        let command = #"""
+        curl --get \
+          'https://coach.co.za/ext/reco-extension/reco' \
+          --data-urlencode 'recommendation_slug=similar-products' \
+          --data-urlencode 'slug=tabby-bag-charm-198685064919' \
+          --data-urlencode 'currency_code=ZAR' \
+          -H 'Accept: application/json'
+        """#
+
+        let result = try parser.parse(command)
+
+        XCTAssertEqual(result.request.method, .get)
+        XCTAssertEqual(result.request.urlString, "https://coach.co.za/ext/reco-extension/reco")
+        XCTAssertEqual(result.request.queryItems.first { $0.name == "recommendation_slug" }?.value, "similar-products")
+        XCTAssertEqual(result.request.queryItems.first { $0.name == "slug" }?.value, "tabby-bag-charm-198685064919")
+        XCTAssertEqual(result.request.queryItems.first { $0.name == "currency_code" }?.value, "ZAR")
+        XCTAssertEqual(result.request.headers.first?.name, "Accept")
+        XCTAssertEqual(result.request.bodyKind, .none)
+        XCTAssertTrue(result.warnings.isEmpty)
+    }
+
     func testUnsupportedOptionsBecomeWarnings() throws {
         let result = try parser.parse("curl --compressed --proxy http://localhost:8080 https://example.com")
 

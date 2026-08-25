@@ -76,6 +76,12 @@ struct CurlParser: Sendable {
             } else if let prefix = ["--data=", "--data-raw=", "--data-binary="].first(where: token.hasPrefix) {
                 applyBody(String(token.dropFirst(prefix.count)), to: &request)
                 inferredPost = true
+            } else if token == "--data-urlencode" {
+                applyURLEncodedBody(try value(after: token), to: &request, warnings: &warnings)
+                inferredPost = true
+            } else if token.hasPrefix("--data-urlencode=") {
+                applyURLEncodedBody(String(token.dropFirst("--data-urlencode=".count)), to: &request, warnings: &warnings)
+                inferredPost = true
             } else if token == "-u" || token == "--user" {
                 applyBasicAuth(try value(after: token), to: &request)
             } else if token.hasPrefix("--user=") {
@@ -209,6 +215,32 @@ struct CurlParser: Sendable {
             $0.name.caseInsensitiveCompare("Content-Type") == .orderedSame &&
             $0.value.lowercased().contains("application/json")
         } || value.trimmingCharacters(in: .whitespacesAndNewlines).first.map({ $0 == "{" || $0 == "[" }) == true ? .json : .raw
+    }
+
+    private func applyURLEncodedBody(_ value: String, to request: inout HTTPRequestDraft, warnings: inout [String]) {
+        let separator = value.firstIndex(of: "=")
+        if let fileMarker = value.firstIndex(of: "@") {
+            let usesFileInput = separator.map { fileMarker < $0 } ?? true
+            if usesFileInput {
+                warnings.append("Ignored file-based --data-urlencode input for safety. Paste the value directly instead.")
+                return
+            }
+        }
+
+        let encoded: String
+        if let separator {
+            let name = String(value[..<separator])
+            let content = String(value[value.index(after: separator)...])
+            encoded = percentEncodeQueryComponent(name) + "=" + percentEncodeQueryComponent(content)
+        } else {
+            encoded = percentEncodeQueryComponent(value)
+        }
+        applyBody(encoded, to: &request)
+    }
+
+    private func percentEncodeQueryComponent(_ value: String) -> String {
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
     }
 
     private func applyBasicAuth(_ value: String, to request: inout HTTPRequestDraft) {
