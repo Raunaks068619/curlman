@@ -84,15 +84,15 @@ private struct HistoryRow: View {
                 .foregroundStyle(statusColor)
                 .frame(width: 54, alignment: .trailing)
             if record.completedAt != nil {
-                Text(record.duration, format: .number.precision(.fractionLength(0...2)))
+                Text("\(record.duration.formatted(.number.precision(.fractionLength(0...2)))) s")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .frame(width: 48, alignment: .trailing)
+                    .frame(width: 54, alignment: .trailing)
             }
-            Text(record.startedAt, style: .relative)
+            Text(record.startedAt.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .frame(width: 78, alignment: .trailing)
+                .frame(width: 116, alignment: .trailing)
             Button(action: togglePin) {
                 Image(systemName: record.isPinned ? "star.fill" : "star")
                     .foregroundStyle(record.isPinned ? .yellow : .secondary)
@@ -144,4 +144,3 @@ private struct HistoryRow: View {
         }
     }
 }
-
