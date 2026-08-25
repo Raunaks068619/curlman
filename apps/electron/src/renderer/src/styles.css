@@ -17,7 +17,8 @@
 html, body, #root { width: 100%; height: 100%; margin: 0; overflow: hidden; }
 body {
   background: Canvas;
-  font: menu;
+  font-size: 13px;
+  line-height: 1.35;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
 }
 button, input, select { font: inherit; }
@@ -26,6 +27,8 @@ button { cursor: default; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .shell { height: 100%; display: grid; grid-template-rows: 32px auto auto auto minmax(0, 1fr); background: var(--content); }
+.shell.platform-win32 { font-family: "Segoe UI", system-ui, sans-serif; font-size: 12px; }
+.shell.platform-linux { font-family: system-ui, sans-serif; font-size: 13px; }
 .titlebar {
   -webkit-app-region: drag;
   position: relative;
@@ -131,7 +134,7 @@ kbd { font-family: inherit; font-size: 0.85em; opacity: 0.75; }
 .shell.compact .request-command select,
 .shell.compact .request-command button { height: 32px; }
 
-@media (max-width: 780px) {
+@media (max-width: 680px) {
   .request-command { grid-template-columns: 82px minmax(140px, 1fr) 94px; padding-inline: 12px; }
   .secondary-action { display: none; }
   .top-tabs, .section-toolbar { padding-inline: 12px; }

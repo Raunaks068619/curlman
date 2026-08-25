@@ -124,7 +124,7 @@ export function App() {
   };
 
   return (
-    <main className={`shell ${isCompact ? 'compact' : ''}`}>
+    <main className={`shell platform-${platform} ${isCompact ? 'compact' : ''}`}>
       <header className="titlebar">
         <div className="brand">Curlman</div>
         <div className="window-actions">

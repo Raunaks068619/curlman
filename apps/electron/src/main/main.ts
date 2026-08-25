@@ -20,10 +20,10 @@ let isCompact = false;
 
 function createWindow(): BrowserWindow {
   const window = new BrowserWindow({
-    width: 820,
-    height: 520,
-    minWidth: 580,
-    minHeight: 380,
+    width: 760,
+    height: 500,
+    minWidth: 560,
+    minHeight: 360,
     show: false,
     skipTaskbar: true,
     title: 'Curlman',
@@ -180,7 +180,7 @@ function toggleCompactWindow(): boolean {
     isCompact = true;
     mainWindow.setResizable(false);
     const width = mainWindow.getBounds().width;
-    mainWindow.setSize(Math.max(520, Math.min(width, 700)), 56, true);
+    mainWindow.setSize(Math.max(500, Math.min(width, 660)), 52, true);
   }
   return isCompact;
 }

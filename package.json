@@ -1,6 +1,6 @@
 {
   "name": "curlman",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "A fast, local-first desktop API client built around cURL.",
   "main": ".vite/build/main.js",
