@@ -104,12 +104,13 @@ private struct RequestCommandBar: View {
             .labelsHidden()
             .frame(width: 94)
 
-            TextField("Enter URL or paste a curl request", text: Binding(
-                get: { model.draft.urlString },
-                set: { model.updateURLInput($0) }
-            ))
-            .textFieldStyle(.roundedBorder)
-            .font(.system(size: 12.5, design: .monospaced))
+            CurlTextField(
+                value: model.draft.urlString,
+                placeholder: "Enter URL or paste a curl request",
+                onChange: model.updateURLInput,
+                onCurlPaste: model.importCurl
+            )
+            .frame(height: 24)
             .accessibilityLabel("Request URL or curl command")
 
             Button(action: model.send) {
@@ -190,7 +191,7 @@ private struct TopTabBar: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 12)
         .frame(height: 38)
         .background(Color(nsColor: .windowBackgroundColor))
         .overlay(alignment: .bottom) { Divider() }

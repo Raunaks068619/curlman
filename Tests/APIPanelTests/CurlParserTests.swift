@@ -33,6 +33,24 @@ final class CurlParserTests: XCTestCase {
         XCTAssertEqual(result.request.headers.first?.name, "Accept")
     }
 
+    func testParsesPostmanStyleMultilineCurlWithURLLast() throws {
+        let command = #"""
+        curl --location --request POST \
+          --header 'content-type: application/json' \
+          --data-raw '{"target":"sales-channel-live-products","calls":[["sales-channel-live-products","2026-08-25 05:29:00+00"]],"caller":"manual-test","user_defined_context":null}' \
+          'https://asia-south1.api.boltic.io/service/webhook/test'
+        """#
+
+        let result = try parser.parse(command)
+
+        XCTAssertEqual(result.request.urlString, "https://asia-south1.api.boltic.io/service/webhook/test")
+        XCTAssertEqual(result.request.method, .post)
+        XCTAssertEqual(result.request.headers.first?.name, "content-type")
+        XCTAssertTrue(result.request.body.contains("\n"), "Imported JSON should be automatically pretty printed")
+        XCTAssertTrue(result.request.body.contains("  \"target\""))
+        XCTAssertFalse(result.warnings.contains { $0.contains("--location") })
+    }
+
     func testGetMovesDataIntoQueryItems() throws {
         let result = try parser.parse("curl -G https://example.com/search --data 'q=swift&limit=5'")
 

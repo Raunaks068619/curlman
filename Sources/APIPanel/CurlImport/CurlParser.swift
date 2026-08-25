@@ -86,6 +86,8 @@ struct CurlParser: Sendable {
                 request.urlString = String(token.dropFirst("--url=".count))
             } else if token == "-G" || token == "--get" {
                 forceGet = true
+            } else if ["-L", "--location", "--location-trusted"].contains(token) {
+                // Redirect following is URLSession's default behavior.
             } else if ["--proxy", "-x", "--connect-timeout", "--max-time", "--cacert", "--cert", "--key", "--cookie", "-b", "--cookie-jar", "-c", "--output", "-o"].contains(token) {
                 _ = try value(after: token)
                 warnings.append("Ignored unsupported curl option: \(token)")
@@ -101,6 +103,7 @@ struct CurlParser: Sendable {
 
         guard !request.urlString.isEmpty else { throw CurlImportError.missingURL }
         splitQueryItems(in: &request)
+        formatJSONBody(in: &request)
 
         if forceGet {
             request.method = .get
@@ -232,5 +235,17 @@ struct CurlParser: Sendable {
         request.queryItems.append(contentsOf: (components.queryItems ?? []).map {
             KeyValueItem(name: $0.name, value: $0.value ?? "")
         })
+    }
+
+    private func formatJSONBody(in request: inout HTTPRequestDraft) {
+        guard request.bodyKind == .json,
+              let data = request.body.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]),
+              let formatted = try? JSONSerialization.data(
+                  withJSONObject: object,
+                  options: [.prettyPrinted, .withoutEscapingSlashes, .fragmentsAllowed]
+              ),
+              let text = String(data: formatted, encoding: .utf8) else { return }
+        request.body = text
     }
 }

@@ -71,13 +71,16 @@ final class AppModel: ObservableObject {
     }
 
     func updateURLInput(_ value: String) {
-        guard value.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("curl ") ||
-              value.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("/usr/bin/curl ") else {
+        guard isCurlCommand(value) else {
             draft.urlString = value
             return
         }
+        importCurl(value)
+    }
+
+    func importCurl(_ command: String) {
         do {
-            let result = try curlParser.parse(value)
+            let result = try curlParser.parse(normalizedCurlCommand(command))
             draft = result.request
             curlWarnings = result.warnings
             inlineError = nil
@@ -86,6 +89,19 @@ final class AppModel: ObservableObject {
         } catch {
             inlineError = error.localizedDescription
         }
+    }
+
+    func isCurlCommand(_ value: String) -> Bool {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.hasPrefix("curl ") ||
+            trimmed.hasPrefix("/usr/bin/curl ") ||
+            trimmed.hasPrefix("$ curl ") ||
+            trimmed.hasPrefix("$ /usr/bin/curl ")
+    }
+
+    private func normalizedCurlCommand(_ command: String) -> String {
+        let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.hasPrefix("$ ") ? String(trimmed.dropFirst(2)) : trimmed
     }
 
     func formatRequestBody() {
@@ -200,4 +216,3 @@ final class AppModel: ObservableObject {
         }
     }
 }
-

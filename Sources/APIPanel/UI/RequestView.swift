@@ -5,19 +5,33 @@ struct RequestView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Picker("Request section", selection: $model.requestSection) {
-                    ForEach(RequestSection.allCases) { section in
-                        Text(label(for: section)).tag(section)
+            HStack(spacing: 2) {
+                ForEach(RequestSection.allCases) { section in
+                    Button {
+                        model.requestSection = section
+                    } label: {
+                        Text(label(for: section))
+                            .font(.system(size: 12, weight: model.requestSection == section ? .semibold : .regular))
+                            .padding(.horizontal, 12)
+                            .frame(height: 26)
+                            .background {
+                                if model.requestSection == section {
+                                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                        .fill(Color(nsColor: .selectedContentBackgroundColor).opacity(0.22))
+                                }
+                            }
                     }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(model.requestSection == section ? Color.primary : Color.secondary)
+                    .accessibilityAddTraits(model.requestSection == section ? .isSelected : [])
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(maxWidth: 430)
                 Spacer()
                 if model.requestSection == .body, model.draft.bodyKind == .json {
-                    Button("Format", action: model.formatRequestBody)
-                        .keyboardShortcut("f", modifiers: [.command, .shift])
+                    Button(action: model.formatRequestBody) {
+                        Label("Format", systemImage: "text.alignleft")
+                    }
+                    .buttonStyle(.borderless)
+                    .keyboardShortcut("f", modifiers: [.command, .shift])
                 }
             }
             .padding(.horizontal, 12)
@@ -54,12 +68,12 @@ private struct BodyEditor: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: 10) {
                 Picker("Body type", selection: $model.draft.bodyKind) {
                     ForEach(RequestBodyKind.allCases) { kind in Text(kind.rawValue).tag(kind) }
                 }
                 .labelsHidden()
-                .frame(width: 110)
+                .frame(width: 104)
                 Spacer()
                 if model.draft.bodyKind == .json, !model.draft.body.isEmpty {
                     Label(model.draft.parsedJSONBody == nil ? "Invalid JSON" : "Valid JSON",
@@ -69,7 +83,7 @@ private struct BodyEditor: View {
                 }
             }
             .padding(.horizontal, 12)
-            .frame(height: 36)
+            .frame(height: 38)
             .background(Color(nsColor: .controlBackgroundColor))
             .overlay(alignment: .bottom) { Divider() }
 
