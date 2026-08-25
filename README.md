@@ -5,7 +5,7 @@
 <h1 align="center">Curlman</h1>
 
 <p align="center">
-  A fast, local-first macOS API client built around cURL.
+  A fast, local-first desktop API client built around cURL.
 </p>
 
 <p align="center">
@@ -19,7 +19,18 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-34c759" alt="MIT License"></a>
 </p>
 
-Curlman lives in the macOS menu bar. Press Command-Shift-C from anywhere, paste a cURL command, edit the request, send it, inspect the formatted response, and recover every previous attempt from automatic local history.
+Curlman turns pasted cURL commands into editable requests, formatted responses, and automatic local history. Use the native macOS menu-bar app or run the consistent Electron app on macOS, Windows, and Linux.
+
+## Run the cross-platform app
+
+Install [Node.js 22.12 or newer](https://nodejs.org/), then run:
+
+```sh
+npm install
+npm run dev
+```
+
+That is all contributors need for local development. The first install downloads Electron and the project dependencies. Curlman opens as a tray/menu-bar app and does not occupy the Dock or taskbar.
 
 ## See it in action
 
@@ -50,16 +61,17 @@ The current public build is ad-hoc signed but not Apple-notarized. The Control-c
 - Automatically retain request and response history without manual saving.
 - Restore, rerun, pin, search, and remove history entries.
 - Minimize into a fixed compact command strip.
-- Follow macOS Light Mode, Dark Mode, accent color, and accessibility preferences.
-- Keep API traffic direct and local through `URLSession`.
+- Choose a custom global shortcut from Settings without losing the previous shortcut on conflicts.
+- Follow the operating system’s Light Mode, Dark Mode, font, and accessibility preferences.
+- Keep API traffic direct and local through the native network stack.
 
-## Requirements
+## Native macOS build
 
 - Apple Silicon Mac
 - macOS 14 or newer
 - Xcode 15 or newer for source builds
 
-## Build and Test
+Build and test the native Swift app:
 
 ```sh
 swift test
@@ -68,10 +80,21 @@ swift test
 
 The release script creates `Curlman.app` and `Curlman.dmg` in `outputs/`.
 
+## Electron checks and packages
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run package:electron
+```
+
+Electron source lives in `apps/electron`. GitHub Actions runs its checks on macOS, Windows, and Linux.
+
 ## Use
 
 1. Launch Curlman.
-2. Press Command-Shift-C from any application to show or hide it.
+2. Press Command-Shift-C from any application to show or hide it, or choose a different shortcut in Settings.
 3. Enter an HTTP URL or paste a curl command into the URL field.
 4. Edit Body, Params, Headers, or Auth.
 5. Press Command-Return to send.
@@ -82,9 +105,9 @@ The close control hides the panel to the menu bar. The minimize control collapse
 
 ## Privacy
 
-Requests execute directly from the Mac through `URLSession`. Pasted curl commands are parsed and never passed to a shell. Request history stays local. Bearer tokens and Basic-auth passwords are saved in macOS Keychain and removed from persisted history snapshots.
+Requests execute directly through `URLSession` in the native app or the Electron main process in the cross-platform app. Pasted cURL commands are parsed and never passed to a shell. Request history stays local. Bearer tokens and Basic-auth passwords are removed from persisted history snapshots and stored with macOS Keychain or Electron's encrypted `safeStorage` vault.
 
-Copying a request as cURL intentionally places its current authentication values on the macOS clipboard so the command remains runnable.
+Copying a request as cURL intentionally places its current authentication values on the system clipboard so the command remains runnable.
 
 ## License
 

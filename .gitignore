@@ -7,3 +7,7 @@ work/
 outputs/
 *.xcuserstate
 xcuserdata/
+node_modules/
+**/.vite/
+dist/
+out/
