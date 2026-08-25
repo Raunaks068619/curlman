@@ -11,7 +11,12 @@ const config: ForgeConfig = {
     executableName: 'Curlman',
     icon: 'Brand/Curlman-Icon',
     name: 'Curlman',
-    extraResource: ['node_modules/sql.js/dist/sql-wasm.wasm'],
+    extraResource: [
+      'node_modules/sql.js/dist/sql-wasm.wasm',
+      'Brand/Curlman-Icon.png',
+      'Brand/Curlman-TrayTemplate.png',
+      'Brand/Curlman-TrayTemplate@2x.png',
+    ],
   },
   makers: [new MakerSquirrel({}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],
   plugins: [

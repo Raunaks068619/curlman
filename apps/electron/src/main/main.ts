@@ -68,8 +68,14 @@ function toggleWindow(): void {
 }
 
 function createTray(): Tray {
-  const iconPath = path.join(app.getAppPath(), 'Brand/Curlman-Icon.png');
-  const icon = nativeImage.createFromPath(iconPath).resize({ width: 18, height: 18 });
+  const isMac = process.platform === 'darwin';
+  const iconName = isMac ? 'Curlman-TrayTemplate.png' : 'Curlman-Icon.png';
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, iconName)
+    : path.join(app.getAppPath(), 'Brand', iconName);
+  const icon = nativeImage.createFromPath(iconPath).resize({ width: isMac ? 18 : 20, height: isMac ? 18 : 20 });
+  if (icon.isEmpty()) throw new Error(`Tray icon is missing: ${iconPath}`);
+  if (isMac) icon.setTemplateImage(true);
   const nextTray = new Tray(icon);
   nextTray.setToolTip('Curlman');
   nextTray.on('click', toggleWindow);
