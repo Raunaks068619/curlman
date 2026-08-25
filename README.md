@@ -35,7 +35,7 @@ That is all contributors need for local development. The first install downloads
 ## See it in action
 
 <p align="center">
-  <a href="https://github.com/Raunaks068619/curlman/releases/download/v0.1.0/Curlman-POST-Demo.mp4">
+  <a href="https://github.com/Raunaks068619/curlman/releases/download/v0.2.0/Curlman-POST-Demo.mp4">
     <img src="Media/Curlman-POST-Demo.gif" alt="Testing a POST API with Curlman" width="720">
   </a>
 </p>
