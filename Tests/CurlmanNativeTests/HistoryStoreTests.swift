@@ -1,5 +1,5 @@
 import XCTest
-@testable import APIPanel
+@testable import CurlmanNative
 
 @MainActor
 final class HistoryStoreTests: XCTestCase {

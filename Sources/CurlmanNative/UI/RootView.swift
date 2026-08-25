@@ -75,7 +75,7 @@ private struct PanelTitleBar: View {
                 WindowControl(color: .red, symbol: "xmark", help: "Close to menu bar", action: closeAction)
                 WindowControl(color: .yellow, symbol: "minus", help: "Minimize to command strip", action: minimizeAction)
                 Spacer()
-                Text("API Panel")
+                Text("Curlman")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .allowsHitTesting(false)

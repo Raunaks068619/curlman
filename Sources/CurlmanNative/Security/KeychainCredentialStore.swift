@@ -20,7 +20,14 @@ enum CredentialStoreError: LocalizedError {
 }
 
 final class KeychainCredentialStore: CredentialStoring, @unchecked Sendable {
-    private let service = "com.raunak.APIPanel.credentials"
+    static let curlmanService = "com.raunak.Curlman.credentials"
+    static let legacyService = "com.raunak.APIPanel.credentials"
+
+    private let service: String
+
+    init(service: String = KeychainCredentialStore.curlmanService) {
+        self.service = service
+    }
 
     func save(secret: String, id: UUID) throws {
         let account = id.uuidString
@@ -67,4 +74,3 @@ final class KeychainCredentialStore: CredentialStoring, @unchecked Sendable {
         }
     }
 }
-

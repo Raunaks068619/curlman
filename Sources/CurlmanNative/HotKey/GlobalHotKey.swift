@@ -15,8 +15,32 @@ final class GlobalHotKey: @unchecked Sendable {
     }
 
     @discardableResult
-    func register() -> Bool {
-        unregister()
+    func register(_ shortcut: GlobalShortcut = .defaultShortcut) -> Bool {
+        guard installEventHandlerIfNeeded() else { return false }
+        if hotKeyRef != nil, registeredShortcut == shortcut { return true }
+
+        var candidateRef: EventHotKeyRef?
+        let identifier = EventHotKeyID(signature: OSType(0x4355524C), id: 1) // CURL
+        let status = RegisterEventHotKey(
+            shortcut.keyCode,
+            shortcut.modifiers,
+            identifier,
+            GetApplicationEventTarget(),
+            0,
+            &candidateRef
+        )
+        guard status == noErr, let candidateRef else { return false }
+
+        if let hotKeyRef { UnregisterEventHotKey(hotKeyRef) }
+        hotKeyRef = candidateRef
+        registeredShortcut = shortcut
+        return true
+    }
+
+    private var registeredShortcut: GlobalShortcut?
+
+    private func installEventHandlerIfNeeded() -> Bool {
+        guard eventHandlerRef == nil else { return true }
         var eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
         let pointer = UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
         let handlerStatus = InstallEventHandler(
@@ -32,18 +56,7 @@ final class GlobalHotKey: @unchecked Sendable {
             pointer,
             &eventHandlerRef
         )
-        guard handlerStatus == noErr else { return false }
-
-        let identifier = EventHotKeyID(signature: OSType(0x41504950), id: 1) // APIP
-        let status = RegisterEventHotKey(
-            UInt32(kVK_ANSI_C),
-            UInt32(cmdKey | shiftKey),
-            identifier,
-            GetApplicationEventTarget(),
-            0,
-            &hotKeyRef
-        )
-        return status == noErr
+        return handlerStatus == noErr
     }
 
     func unregister() {
@@ -51,5 +64,6 @@ final class GlobalHotKey: @unchecked Sendable {
         if let eventHandlerRef { RemoveEventHandler(eventHandlerRef) }
         hotKeyRef = nil
         eventHandlerRef = nil
+        registeredShortcut = nil
     }
 }

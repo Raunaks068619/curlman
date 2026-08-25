@@ -3,9 +3,9 @@ set -euo pipefail
 
 PROJECT_ROOT="${0:A:h:h}"
 OUTPUT_DIR="$PROJECT_ROOT/outputs"
-APP_BUNDLE="$OUTPUT_DIR/API Panel.app"
-DMG_PATH="$OUTPUT_DIR/API-Panel.dmg"
-ICON_SOURCE="$PROJECT_ROOT/Brand/API-Panel-Icon.png"
+APP_BUNDLE="$OUTPUT_DIR/Curlman.app"
+DMG_PATH="$OUTPUT_DIR/Curlman.dmg"
+ICON_SOURCE="$PROJECT_ROOT/Brand/Curlman-Icon.png"
 ICONSET_DIR="$PROJECT_ROOT/work/AppIcon.iconset"
 
 cd "$PROJECT_ROOT"
@@ -17,7 +17,7 @@ if [[ -e "$APP_BUNDLE" ]]; then
 fi
 
 mkdir -p "$APP_BUNDLE/Contents/MacOS" "$APP_BUNDLE/Contents/Resources" "$OUTPUT_DIR" "$PROJECT_ROOT/work"
-cp "$BIN_DIR/APIPanel" "$APP_BUNDLE/Contents/MacOS/APIPanel"
+cp "$BIN_DIR/CurlmanNative" "$APP_BUNDLE/Contents/MacOS/CurlmanNative"
 cp "$PROJECT_ROOT/Packaging/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 
 rm -rf "$ICONSET_DIR"
@@ -35,12 +35,12 @@ sips -z 1024 1024 "$ICON_SOURCE" --out "$ICONSET_DIR/icon_512x512@2x.png" >/dev/
 iconutil -c icns "$ICONSET_DIR" -o "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
 rm -rf "$ICONSET_DIR"
 
-chmod 755 "$APP_BUNDLE/Contents/MacOS/APIPanel"
+chmod 755 "$APP_BUNDLE/Contents/MacOS/CurlmanNative"
 
 codesign --force --deep --sign - "$APP_BUNDLE"
 
-DMG_STAGE="$(mktemp -d "$PROJECT_ROOT/work/api-panel-dmg.XXXXXX")"
-ditto "$APP_BUNDLE" "$DMG_STAGE/API Panel.app"
+DMG_STAGE="$(mktemp -d "$PROJECT_ROOT/work/curlman-dmg.XXXXXX")"
+ditto "$APP_BUNDLE" "$DMG_STAGE/Curlman.app"
 ln -s /Applications "$DMG_STAGE/Applications"
 
 if [[ -e "$DMG_PATH" ]]; then
@@ -53,7 +53,7 @@ DMG_SIZE_MB="$(( (STAGE_KB + 1023) / 1024 + 20 ))"
 hdiutil create \
     -size "${DMG_SIZE_MB}m" \
     -fs HFS+ \
-    -volname "API Panel" \
+    -volname "Curlman" \
     -srcfolder "$DMG_STAGE" \
     -ov \
     -format UDZO \

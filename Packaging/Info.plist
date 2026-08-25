@@ -5,17 +5,17 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>API Panel</string>
+    <string>Curlman</string>
     <key>CFBundleExecutable</key>
-    <string>APIPanel</string>
+    <string>CurlmanNative</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
-    <string>com.raunak.APIPanel</string>
+    <string>com.raunak.Curlman</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>API Panel</string>
+    <string>Curlman</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

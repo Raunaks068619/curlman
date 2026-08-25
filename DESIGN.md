@@ -1,17 +1,17 @@
 ---
-name: API Panel
+name: Curlman
 description: A focused native macOS API utility that appears when needed and remembers every request.
 ---
 
 <!-- SEED: re-run /impeccable document once code exists to capture the actual tokens and components. -->
 
-# Design System: API Panel
+# Design System: Curlman
 
 ## Overview
 
 **Creative North Star: "The Native Instrument"**
 
-API Panel should feel installed with the operating system, not rendered inside it. The interface is compact, information-dense, and predictable. System controls, platform typography, native materials, and progressive disclosure make the tool disappear behind the request being tested.
+Curlman should feel installed with the operating system, not rendered inside it. The interface is compact, information-dense, and predictable. System controls, platform typography, native materials, and progressive disclosure make the tool disappear behind the request being tested.
 
 The visual system rejects Postman-scale chrome, web-dashboard styling, decorative glass cards, fake notch geometry, persistent navigation, and empty output surfaces. Glass exists only where macOS uses material to establish a floating window; technical content remains stable and opaque.
 

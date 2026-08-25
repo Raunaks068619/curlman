@@ -1,5 +1,5 @@
 import XCTest
-@testable import APIPanel
+@testable import CurlmanNative
 
 final class CurlParserTests: XCTestCase {
     private let parser = CurlParser()

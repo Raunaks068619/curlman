@@ -10,7 +10,7 @@ Developers and technical users who need to inspect, edit, execute, and revisit H
 
 ## Product Purpose
 
-API Panel provides a fast, local-first API-testing surface that lives in the macOS menu bar. Success means a user can press Command-Shift-C, paste a URL or curl command, edit the request, execute it, inspect a full-width response, and recover any previous request from automatic history with minimal interruption.
+Curlman provides a fast, local-first API-testing surface that lives in the macOS menu bar. Success means a user can press Command-Shift-C, paste a URL or curl command, edit the request, execute it, inspect a full-width response, and recover any previous request from automatic history with minimal interruption.
 
 ## Brand Personality
 

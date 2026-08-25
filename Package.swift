@@ -2,20 +2,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "APIPanel",
+    name: "CurlmanNative",
     platforms: [.macOS(.v14)],
     products: [
-        .executable(name: "APIPanel", targets: ["APIPanel"])
+        .executable(name: "CurlmanNative", targets: ["CurlmanNative"])
     ],
     targets: [
         .executableTarget(
-            name: "APIPanel",
-            path: "Sources/APIPanel"
+            name: "CurlmanNative",
+            path: "Sources/CurlmanNative"
         ),
         .testTarget(
-            name: "APIPanelTests",
-            dependencies: ["APIPanel"],
-            path: "Tests/APIPanelTests"
+            name: "CurlmanNativeTests",
+            dependencies: ["CurlmanNative"],
+            path: "Tests/CurlmanNativeTests"
         )
     ]
 )

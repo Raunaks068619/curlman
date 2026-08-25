@@ -1,5 +1,5 @@
 import XCTest
-@testable import APIPanel
+@testable import CurlmanNative
 
 final class HTTPClientTests: XCTestCase {
     func testBuildsURLRequestWithQueryHeadersBodyAndBearerAuth() throws {

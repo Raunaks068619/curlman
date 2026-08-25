@@ -45,6 +45,24 @@ final class HistoryRecord {
         self.isPinned = false
     }
 
+    init(copying record: HistoryRecord) {
+        self.id = record.id
+        self.startedAt = record.startedAt
+        self.completedAt = record.completedAt
+        self.displayName = record.displayName
+        self.method = record.method
+        self.urlString = record.urlString
+        self.requestData = record.requestData
+        self.responseData = record.responseData
+        self.outcomeRawValue = record.outcomeRawValue
+        self.statusCode = record.statusCode
+        self.duration = record.duration
+        self.responseSize = record.responseSize
+        self.bodyTruncated = record.bodyTruncated
+        self.errorMessage = record.errorMessage
+        self.isPinned = record.isPinned
+    }
+
     var outcome: HistoryOutcome {
         get { HistoryOutcome(rawValue: outcomeRawValue) ?? .transportFailure }
         set { outcomeRawValue = newValue.rawValue }
@@ -68,9 +86,13 @@ final class HistoryStore: ObservableObject {
     private let context: ModelContext
     private let responseBodyLimit: Int
 
-    init(inMemory: Bool = false, responseBodyLimit: Int = 2 * 1_024 * 1_024) throws {
+    init(
+        inMemory: Bool = false,
+        responseBodyLimit: Int = 2 * 1_024 * 1_024,
+        configurationName: String = "Curlman"
+    ) throws {
         let schema = Schema([HistoryRecord.self])
-        let configuration = ModelConfiguration("APIPanel", schema: schema, isStoredInMemoryOnly: inMemory)
+        let configuration = ModelConfiguration(configurationName, schema: schema, isStoredInMemoryOnly: inMemory)
         self.container = try ModelContainer(for: schema, configurations: [configuration])
         self.context = ModelContext(container)
         self.responseBodyLimit = responseBodyLimit
@@ -147,6 +169,15 @@ final class HistoryStore: ObservableObject {
 
     func clear() throws {
         try context.delete(model: HistoryRecord.self)
+        try context.save()
+        try reload()
+    }
+
+    func importLegacyRecords(_ legacyRecords: [HistoryRecord]) throws {
+        let existingIDs = Set(records.map(\.id))
+        for record in legacyRecords where !existingIDs.contains(record.id) {
+            context.insert(HistoryRecord(copying: record))
+        }
         try context.save()
         try reload()
     }

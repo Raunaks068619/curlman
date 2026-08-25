@@ -1,5 +1,5 @@
 import XCTest
-@testable import APIPanel
+@testable import CurlmanNative
 
 final class CurlExporterTests: XCTestCase {
     func testExportsMethodAndFinalURLWithEnabledQueryItems() throws {
