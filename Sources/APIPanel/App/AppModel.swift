@@ -38,21 +38,27 @@ final class AppModel: ObservableObject {
     @Published var curlWarnings: [String] = []
     @Published var inlineError: String?
     @Published var historySearch = ""
+    @Published private(set) var didCopyCurl = false
 
     let historyStore: HistoryStore
     private let httpClient: HTTPClient
     private let credentialStore: CredentialStoring
+    private let clipboard: ClipboardWriting
     private let curlParser = CurlParser()
+    private let curlExporter = CurlExporter()
     private var requestTask: Task<Void, Never>?
+    private var copyFeedbackTask: Task<Void, Never>?
 
     init(
         historyStore: HistoryStore,
         httpClient: HTTPClient = HTTPClient(),
-        credentialStore: CredentialStoring = KeychainCredentialStore()
+        credentialStore: CredentialStoring = KeychainCredentialStore(),
+        clipboard: ClipboardWriting = SystemClipboardWriter()
     ) {
         self.historyStore = historyStore
         self.httpClient = httpClient
         self.credentialStore = credentialStore
+        self.clipboard = clipboard
     }
 
     var availableTabs: [TopTab] {
@@ -126,6 +132,26 @@ final class AppModel: ObservableObject {
             return
         }
         inlineError = error
+    }
+
+    func copyAsCurl() {
+        do {
+            let command = try curlExporter.export(draft)
+            guard clipboard.write(command) else {
+                inlineError = "The cURL command could not be copied."
+                return
+            }
+            inlineError = nil
+            didCopyCurl = true
+            copyFeedbackTask?.cancel()
+            copyFeedbackTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(1.6))
+                guard !Task.isCancelled else { return }
+                self?.didCopyCurl = false
+            }
+        } catch {
+            inlineError = error.localizedDescription
+        }
     }
 
     func newRequest() {
