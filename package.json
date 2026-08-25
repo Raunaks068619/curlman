@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "package:electron": "electron-forge package",
+    "package:electron": "electron-forge package && node scripts/verify-electron-package.mjs",
     "make:electron": "electron-forge make"
   },
   "dependencies": {

@@ -43,3 +43,7 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Verify packaged Electron runtime
+        if: matrix.os == 'macos-15'
+        run: npm run package:electron
