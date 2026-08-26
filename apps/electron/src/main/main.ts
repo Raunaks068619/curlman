@@ -47,6 +47,10 @@ function createWindow(): BrowserWindow {
       window.hide();
     }
   });
+  window.on('show', () => {
+    window.webContents.focus();
+    window.webContents.send('window:focus-command-input');
+  });
   window.once('ready-to-show', () => window.show());
 
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createEmptyRequest, HTTPMethods, type HistoryEntry, type RequestDraft, type ResponseSnapshot } from '../../shared/models';
 import { HistoryWorkspace } from './HistoryWorkspace';
 import { RequestWorkspace, type RequestSection } from './RequestWorkspace';
@@ -19,6 +19,7 @@ export function App() {
   const [didCopy, setDidCopy] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
   const [platform, setPlatform] = useState<NodeJS.Platform>('darwin');
+  const commandInputRef = useRef<HTMLInputElement>(null);
 
   const refreshHistory = useCallback(async () => {
     setHistory(await window.curlman.listHistory());
@@ -28,6 +29,11 @@ export function App() {
     void refreshHistory();
     void window.curlman.getPlatform().then(setPlatform);
   }, [refreshHistory]);
+
+  useEffect(() => window.curlman.onFocusCommandInput(() => {
+    commandInputRef.current?.focus();
+    commandInputRef.current?.select();
+  }), []);
 
   const expand = useCallback(async () => {
     if (!isCompact) return;
@@ -148,6 +154,7 @@ export function App() {
           {HTTPMethods.map((method) => <option key={method}>{method}</option>)}
         </select>
         <input
+          ref={commandInputRef}
           aria-label="Request URL"
           value={draft.urlString}
           placeholder="Enter URL or paste a cURL request"

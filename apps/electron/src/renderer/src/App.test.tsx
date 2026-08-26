@@ -1,12 +1,18 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 
 describe('Curlman shell', () => {
+  let focusCommandInput = () => undefined;
+
   beforeEach(() => {
     window.curlman = {
       getPlatform: vi.fn().mockResolvedValue('linux'),
       getVersion: vi.fn().mockResolvedValue('0.2.0'),
+      onFocusCommandInput: vi.fn((listener) => {
+        focusCommandInput = listener;
+        return () => undefined;
+      }),
       hideWindow: vi.fn().mockResolvedValue(undefined),
       importCurl: vi.fn(),
       copyAsCurl: vi.fn(),
@@ -29,5 +35,16 @@ describe('Curlman shell', () => {
     expect(screen.getByRole('navigation', { name: 'Workspace' })).toHaveTextContent('Request');
     expect(screen.queryByRole('button', { name: 'Response' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Send/ })).toBeInTheDocument();
+  });
+
+  it('returns focus to the command input whenever the window opens', () => {
+    render(<App />);
+    const input = screen.getByRole('textbox', { name: 'Request URL' });
+    screen.getByRole('button', { name: /Send/ }).focus();
+    expect(input).not.toHaveFocus();
+
+    act(() => focusCommandInput());
+
+    expect(input).toHaveFocus();
   });
 });

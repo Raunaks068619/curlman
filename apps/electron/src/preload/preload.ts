@@ -5,6 +5,11 @@ import type { CurlImportResult, HistoryEntry, RequestDraft, ResponseSnapshot } f
 const api: DesktopAPI = {
   getPlatform: () => ipcRenderer.invoke('desktop:get-platform') as Promise<NodeJS.Platform>,
   getVersion: () => ipcRenderer.invoke('desktop:get-version') as Promise<string>,
+  onFocusCommandInput: (listener) => {
+    const handleFocus = () => listener();
+    ipcRenderer.on('window:focus-command-input', handleFocus);
+    return () => ipcRenderer.removeListener('window:focus-command-input', handleFocus);
+  },
   hideWindow: () => ipcRenderer.invoke('desktop:hide-window') as Promise<void>,
   importCurl: (command: string) => ipcRenderer.invoke('request:import-curl', command) as Promise<CurlImportResult>,
   copyAsCurl: (request: RequestDraft) => ipcRenderer.invoke('request:copy-curl', request) as Promise<string>,
