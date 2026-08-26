@@ -11,7 +11,7 @@ final class PanelController: NSWindowController, NSWindowDelegate {
 
     init(model: AppModel) {
         self.model = model
-        let panel = NSPanel(
+        let panel = InteractivePanel(
             contentRect: NSRect(x: 0, y: 0, width: 780, height: 520),
             styleMask: [.titled, .fullSizeContentView, .resizable],
             backing: .buffered,
