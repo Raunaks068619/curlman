@@ -10,6 +10,11 @@ const api: DesktopAPI = {
     ipcRenderer.on('window:focus-command-input', handleFocus);
     return () => ipcRenderer.removeListener('window:focus-command-input', handleFocus);
   },
+  onTrayAction: (listener) => {
+    const handleAction = (_event: Electron.IpcRendererEvent, action: 'new-request' | 'history' | 'settings') => listener(action);
+    ipcRenderer.on('tray:action', handleAction);
+    return () => ipcRenderer.removeListener('tray:action', handleAction);
+  },
   hideWindow: () => ipcRenderer.invoke('desktop:hide-window') as Promise<void>,
   importCurl: (command: string) => ipcRenderer.invoke('request:import-curl', command) as Promise<CurlImportResult>,
   copyAsCurl: (request: RequestDraft) => ipcRenderer.invoke('request:copy-curl', request) as Promise<string>,

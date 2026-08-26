@@ -35,6 +35,19 @@ export function App() {
     commandInputRef.current?.select();
   }), []);
 
+  useEffect(() => window.curlman.onTrayAction((action) => {
+    if (action === 'new-request') {
+      setDraft(createEmptyRequest());
+      setResponse(undefined);
+      setWarnings([]);
+      setError(undefined);
+      setRequestSection('Body');
+      setTopTab('Request');
+    } else {
+      setTopTab(action === 'history' ? 'History' : 'Settings');
+    }
+  }), []);
+
   const expand = useCallback(async () => {
     if (!isCompact) return;
     await window.curlman.toggleCompact();

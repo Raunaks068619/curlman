@@ -5,6 +5,7 @@ export interface DesktopAPI {
   hideWindow: () => Promise<void>;
   getVersion: () => Promise<string>;
   onFocusCommandInput: (listener: () => void) => () => void;
+  onTrayAction: (listener: (action: 'new-request' | 'history' | 'settings') => void) => () => void;
   importCurl: (command: string) => Promise<CurlImportResult>;
   copyAsCurl: (request: RequestDraft) => Promise<string>;
   executeRequest: (request: RequestDraft) => Promise<ResponseSnapshot>;

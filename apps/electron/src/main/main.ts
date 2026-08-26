@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, nativeImage, session, Tray, type Rectangle } from 'electron';
+import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, nativeImage, session, Tray, type Rectangle } from 'electron';
 import { buildURL, enabledHeaders, exportCurl, parseCurl } from '../shared/curl';
 import { RequestDraftSchema, type RequestDraft, type ResponseSnapshot } from '../shared/models';
 import { CredentialVault, sanitizeRequest } from './credential-vault';
@@ -66,9 +66,24 @@ function toggleWindow(): void {
   if (mainWindow.isVisible()) {
     mainWindow.hide();
   } else {
-    mainWindow.show();
-    mainWindow.focus();
+    showMainWindow();
   }
+}
+
+function showMainWindow(): void {
+  if (!mainWindow) return;
+  mainWindow.show();
+  mainWindow.focus();
+  mainWindow.webContents.focus();
+  mainWindow.webContents.send('window:focus-command-input');
+}
+
+function showTrayDestination(action: 'new-request' | 'history' | 'settings'): void {
+  if (!mainWindow) return;
+  showMainWindow();
+  const sendAction = () => mainWindow?.webContents.send('tray:action', action);
+  if (mainWindow.webContents.isLoadingMainFrame()) mainWindow.webContents.once('did-finish-load', sendAction);
+  else sendAction();
 }
 
 function createTray(): Tray {
@@ -82,7 +97,27 @@ function createTray(): Tray {
   if (isMac) icon.setTemplateImage(true);
   const nextTray = new Tray(icon);
   nextTray.setToolTip('Curlman');
-  nextTray.on('click', toggleWindow);
+  const menu = Menu.buildFromTemplate([
+    { label: 'Open Curlman', click: showMainWindow },
+    { label: 'New Request', click: () => showTrayDestination('new-request') },
+    { label: 'History', click: () => showTrayDestination('history') },
+    { label: 'Settings…', click: () => showTrayDestination('settings') },
+    { type: 'separator' },
+    {
+      label: 'Quit Curlman',
+      click: () => {
+        isQuitting = true;
+        app.quit();
+      },
+    },
+  ]);
+  if (isMac) {
+    nextTray.on('click', () => nextTray.popUpContextMenu(menu));
+    nextTray.on('right-click', () => nextTray.popUpContextMenu(menu));
+  } else {
+    nextTray.setContextMenu(menu);
+    nextTray.on('click', showMainWindow);
+  }
   return nextTray;
 }
 

@@ -4,6 +4,7 @@ import { App } from './App';
 
 describe('Curlman shell', () => {
   let focusCommandInput = () => undefined;
+  let runTrayAction: (action: 'new-request' | 'history' | 'settings') => void = () => undefined;
 
   beforeEach(() => {
     window.curlman = {
@@ -11,6 +12,10 @@ describe('Curlman shell', () => {
       getVersion: vi.fn().mockResolvedValue('0.2.0'),
       onFocusCommandInput: vi.fn((listener) => {
         focusCommandInput = listener;
+        return () => undefined;
+      }),
+      onTrayAction: vi.fn((listener) => {
+        runTrayAction = listener;
         return () => undefined;
       }),
       hideWindow: vi.fn().mockResolvedValue(undefined),
@@ -46,5 +51,15 @@ describe('Curlman shell', () => {
     act(() => focusCommandInput());
 
     expect(input).toHaveFocus();
+  });
+
+  it('opens tray destinations without requiring the main navigation', () => {
+    render(<App />);
+
+    act(() => runTrayAction('history'));
+    expect(screen.getByRole('navigation', { name: 'Workspace' })).toHaveTextContent('History');
+
+    act(() => runTrayAction('settings'));
+    expect(screen.getByRole('heading', { name: 'Global shortcut' })).toBeInTheDocument();
   });
 });
