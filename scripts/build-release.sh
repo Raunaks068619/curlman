@@ -5,6 +5,7 @@ PROJECT_ROOT="${0:A:h:h}"
 OUTPUT_DIR="$PROJECT_ROOT/outputs"
 APP_BUNDLE="$OUTPUT_DIR/Curlman.app"
 DMG_PATH="$OUTPUT_DIR/Curlman.dmg"
+CHECKSUM_PATH="$OUTPUT_DIR/Curlman.dmg.sha256"
 ICON_SOURCE="$PROJECT_ROOT/Brand/Curlman-Icon.png"
 ICONSET_DIR="$PROJECT_ROOT/work/AppIcon.iconset"
 
@@ -60,5 +61,7 @@ hdiutil create \
     "$DMG_PATH"
 
 rm -rf "$DMG_STAGE"
+(cd "$OUTPUT_DIR" && shasum -a 256 Curlman.dmg > "${CHECKSUM_PATH:t}")
 echo "$APP_BUNDLE"
 echo "$DMG_PATH"
+echo "$CHECKSUM_PATH"
