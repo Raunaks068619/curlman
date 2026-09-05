@@ -136,25 +136,24 @@ Request, Response, and History are top-level tabs. History is not a persistent s
 
 ### 5.2 First-run onboarding
 
-Onboarding is a single focused surface that teaches by doing. It is skippable, repeatable from Help, keyboard accessible, and never sends a request without user action.
+Onboarding is one complete page rather than a multi-step wizard. It is skippable, repeatable from Help, keyboard accessible, and never sends a request without user action.
 
-#### Step 1: Explain the promise
+The page uses a structured two-column layout:
 
-Show: “Paste cURL. Test it. Find it later.” Explain that Curlman lives in the menu bar or tray, requires no account, and stores history locally.
+- The identity side introduces Curlman, its lightweight purpose, the open, edit, send, and local-history workflow, plus the local-only privacy promise.
+- The quick-setup side contains the editable global shortcut, an optional safe example request, the GitHub repository card, and the primary Start Using Curlman action.
 
-#### Step 2: Confirm the shortcut
+The shortcut control presents the platform default and allows recording a replacement in place. A registration conflict keeps the previous working shortcut and explains how to choose another.
 
-Present the platform default and allow recording a replacement. The user presses the shortcut once, Curlman hides and reopens, and the step receives a semantic confirmation. A registration conflict keeps the previous working shortcut and explains how to choose another.
-
-#### Step 3: Complete one request
-
-Load, but do not send, this safe example:
+The optional example is loaded, but never sent automatically:
 
 ```sh
 curl https://api.github.com/zen
 ```
 
-The user sees the parsed URL, presses the send shortcut, receives a response, and sees the request appear in History. If the endpoint is unavailable, onboarding still completes after demonstrating the execution and history states.
+The user may press the send shortcut or choose Send. A success, HTTP error, or transport failure demonstrates the result and local History behavior, but onboarding completion never depends on network availability.
+
+The GitHub repository card contains the Curlman icon, `Raunaks068619/curlman`, a release-time snapshot of the public star count, and a Star on GitHub button. If the count is zero, supporting copy says “Be the first star.” Curlman does not contact GitHub merely to render onboarding. Release automation inserts the count into build metadata, and the explicit button opens the public repository in the user’s browser where GitHub handles authentication and starring.
 
 ### 5.3 Visual system
 
@@ -213,6 +212,7 @@ Swift and Electron share a documented request and history interchange schema plu
 - Ignore shell substitutions and unsafe file references during cURL import.
 - Use session-only cookies by default and provide a visible clear-session action.
 - Collect no analytics or telemetry and upload no crash reports automatically.
+- Do not fetch GitHub stars or other promotional metadata during onboarding. Use release metadata and navigate to GitHub only after an explicit user action.
 - Include a macOS privacy manifest in `Contents/Resources` that reflects the shipped behavior.
 
 ## 8. Error Handling
@@ -331,7 +331,7 @@ npm run dev
 - JSON, XML, HTML, text, binary, image, and large response handling.
 - History migrations, retention, redaction, import, export, recovery, and exact restoration.
 - Credential adapter behavior using test doubles rather than real secrets.
-- Onboarding and shortcut state machines.
+- One-page onboarding completion, shortcut editing, example-request, and GitHub-card states.
 
 ### 12.2 UI and accessibility tests
 
@@ -350,7 +350,7 @@ npm run dev
 - Run Gatekeeper assessment on the app and DMG.
 - Download the public artifact and compare its checksum with the release checksum.
 - Install and launch from a clean, quarantined environment.
-- Complete onboarding, import the example cURL, send it, inspect the response, find it in History, and quit from the menu.
+- Complete onboarding, optionally send the example cURL, inspect the response, find it in History, open the GitHub card, and quit from the menu.
 
 ## 13. Documentation
 
@@ -414,7 +414,8 @@ Required documentation:
 - [ ] Homebrew installs and launches the same native build.
 - [ ] Windows and Linux installers launch in clean environments.
 - [ ] `npm install` and `npm run dev` work from a fresh clone.
-- [ ] Onboarding can be completed with only the keyboard.
+- [ ] The one-page onboarding can be completed with only the keyboard.
 - [ ] The onboarding request produces a visible result or a clear network error and is saved to History.
+- [ ] The onboarding GitHub card displays the release star-count snapshot and opens the expected public repository only after activation.
 - [ ] Secrets are absent from history, logs, exports, fixtures, and release artifacts.
 - [ ] README links and installation commands are tested against the published release.

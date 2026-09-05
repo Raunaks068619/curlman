@@ -79,16 +79,19 @@ Files:
 
 Tasks:
 
-1. Implement the three-step learn-by-doing onboarding from the design.
-2. Verify the global shortcut interactively without requesting Accessibility permission.
-3. Load the safe example request without sending it automatically.
-4. Allow skipping and reopening onboarding from Help.
-5. Persist onboarding completion and restore unsent drafts after restart.
-6. Add keyboard focus, VoiceOver labels, semantic status announcements, and reduced-motion behavior.
+1. Implement the approved one-page, two-column onboarding layout.
+2. Present Curlman’s open, edit, send, and local-history workflow with clear native hierarchy.
+3. Allow editing and registering the global shortcut in place without requesting Accessibility permission.
+4. Load the safe example request without sending it automatically.
+5. Add a GitHub repository card with a release-time star-count snapshot and an explicit Star on GitHub action.
+6. Allow skipping and reopening onboarding from Help.
+7. Persist onboarding completion and restore unsent drafts after restart.
+8. Add keyboard focus, VoiceOver labels, semantic status announcements, and reduced-motion behavior.
 
 Verification:
 
-- State-machine tests cover first run, skip, replay, shortcut conflict, success, and network failure.
+- Onboarding tests cover first run, skip, replay, shortcut conflict, optional request success, and network failure.
+- The GitHub card renders without a background network request and opens only the expected public repository.
 - Draft tests cover save, restore, redaction, corruption, and clearing after reset.
 - A keyboard-only smoke test completes onboarding.
 
@@ -251,9 +254,10 @@ Tasks:
 
 1. Add a platform installation matrix and one-minute quick start.
 2. Add the onboarding demo and concise product positioning.
-3. Document supported cURL flags, privacy, local data, retention, export, uninstall, and troubleshooting.
-4. Document contributor setup, architecture, tests, packaging, signing, notarization, and security reporting.
-5. Validate every public link and command against published artifacts.
+3. Insert the current GitHub star count into release metadata without adding a first-run network request.
+4. Document supported cURL flags, privacy, local data, retention, export, uninstall, and troubleshooting.
+5. Document contributor setup, architecture, tests, packaging, signing, notarization, and security reporting.
+6. Validate every public link and command against published artifacts.
 
 Verification:
 
