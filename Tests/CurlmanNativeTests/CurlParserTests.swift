@@ -107,6 +107,25 @@ final class CurlParserTests: XCTestCase {
         XCTAssertTrue(result.warnings.isEmpty)
     }
 
+    func testPostDataURLEncodeCreatesEditableFormFields() throws {
+        let result = try parser.parse("curl https://example.com/token --data-urlencode 'grant_type=client credentials'")
+
+        XCTAssertEqual(result.request.method, .post)
+        XCTAssertEqual(result.request.bodyKind, .formURLEncoded)
+        XCTAssertEqual(result.request.formItems.first?.name, "grant_type")
+        XCTAssertEqual(result.request.formItems.first?.value, "client credentials")
+    }
+
+    func testMultipartFileImportRequiresApproval() throws {
+        let result = try parser.parse("curl https://example.com/upload -F 'title=Report' -F 'document=@/tmp/report.pdf'")
+
+        XCTAssertEqual(result.request.bodyKind, .multipart)
+        XCTAssertEqual(result.request.multipartParts.count, 2)
+        XCTAssertEqual(result.request.multipartParts[1].kind, .file)
+        XCTAssertFalse(result.request.multipartParts[1].isFileAccessApproved)
+        XCTAssertTrue(result.warnings.contains { $0.contains("needs approval") })
+    }
+
     func testUnsupportedOptionsBecomeWarnings() throws {
         let result = try parser.parse("curl --compressed --proxy http://localhost:8080 https://example.com")
 

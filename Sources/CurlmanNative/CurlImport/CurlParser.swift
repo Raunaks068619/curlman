@@ -82,6 +82,12 @@ struct CurlParser: Sendable {
             } else if token.hasPrefix("--data-urlencode=") {
                 applyURLEncodedBody(String(token.dropFirst("--data-urlencode=".count)), to: &request, warnings: &warnings)
                 inferredPost = true
+            } else if token == "-F" || token == "--form" {
+                applyMultipartPart(try value(after: token), to: &request, warnings: &warnings)
+                inferredPost = true
+            } else if token.hasPrefix("--form=") {
+                applyMultipartPart(String(token.dropFirst("--form=".count)), to: &request, warnings: &warnings)
+                inferredPost = true
             } else if token == "-u" || token == "--user" {
                 applyBasicAuth(try value(after: token), to: &request)
             } else if token.hasPrefix("--user=") {
@@ -113,7 +119,11 @@ struct CurlParser: Sendable {
 
         if forceGet {
             request.method = .get
-            if !request.body.isEmpty {
+            if !request.formItems.isEmpty {
+                request.queryItems.append(contentsOf: request.formItems)
+                request.formItems = []
+                request.bodyKind = .none
+            } else if !request.body.isEmpty {
                 appendBodyAsQueryItems(to: &request)
                 request.body = ""
                 request.bodyKind = .none
@@ -227,20 +237,35 @@ struct CurlParser: Sendable {
             }
         }
 
-        let encoded: String
         if let separator {
             let name = String(value[..<separator])
             let content = String(value[value.index(after: separator)...])
-            encoded = percentEncodeQueryComponent(name) + "=" + percentEncodeQueryComponent(content)
+            request.formItems.append(KeyValueItem(name: name, value: content))
         } else {
-            encoded = percentEncodeQueryComponent(value)
+            request.formItems.append(KeyValueItem(name: value, value: ""))
         }
-        applyBody(encoded, to: &request)
+        request.bodyKind = .formURLEncoded
     }
 
-    private func percentEncodeQueryComponent(_ value: String) -> String {
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
-        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+    private func applyMultipartPart(_ value: String, to request: inout HTTPRequestDraft, warnings: inout [String]) {
+        guard let separator = value.firstIndex(of: "=") else {
+            warnings.append("Ignored malformed multipart field: \(value)")
+            return
+        }
+        let name = String(value[..<separator])
+        let content = String(value[value.index(after: separator)...])
+        if content.hasPrefix("@") {
+            request.multipartParts.append(MultipartPart(
+                name: name,
+                kind: .file,
+                filePath: String(content.dropFirst()),
+                isFileAccessApproved: false
+            ))
+            warnings.append("File field \(name) needs approval before Curlman can read it.")
+        } else {
+            request.multipartParts.append(MultipartPart(name: name, value: content))
+        }
+        request.bodyKind = .multipart
     }
 
     private func applyBasicAuth(_ value: String, to request: inout HTTPRequestDraft) {

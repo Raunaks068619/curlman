@@ -44,4 +44,28 @@ final class CurlExporterTests: XCTestCase {
         XCTAssertFalse(command.contains("X-Ignored"))
         XCTAssertTrue(command.contains(#"--data-raw '{"message":"it'\''s ready"}'"#))
     }
+
+    func testExportsEditableFormAndMultipartFields() throws {
+        var form = HTTPRequestDraft.empty
+        form.method = .post
+        form.urlString = "https://example.com/token"
+        form.bodyKind = .formURLEncoded
+        form.formItems = [KeyValueItem(name: "grant_type", value: "client credentials")]
+
+        let formCommand = try CurlExporter().export(form)
+        XCTAssertTrue(formCommand.contains("--data-urlencode 'grant_type=client credentials'"))
+
+        var multipart = HTTPRequestDraft.empty
+        multipart.method = .post
+        multipart.urlString = "https://example.com/upload"
+        multipart.bodyKind = .multipart
+        multipart.multipartParts = [
+            MultipartPart(name: "title", value: "Report"),
+            MultipartPart(name: "document", kind: .file, filePath: "/tmp/report.pdf")
+        ]
+
+        let multipartCommand = try CurlExporter().export(multipart)
+        XCTAssertTrue(multipartCommand.contains("--form 'title=Report'"))
+        XCTAssertTrue(multipartCommand.contains("--form 'document=@/tmp/report.pdf'"))
+    }
 }

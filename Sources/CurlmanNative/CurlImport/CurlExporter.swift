@@ -8,7 +8,11 @@ struct CurlExporter {
     }
 
     func export(_ draft: HTTPRequestDraft) throws -> String {
-        let request = try httpClient.makeURLRequest(from: draft)
+        var requestDraft = draft
+        if draft.bodyKind == .formURLEncoded || draft.bodyKind == .multipart {
+            requestDraft.bodyKind = .none
+        }
+        let request = try httpClient.makeURLRequest(from: requestDraft)
         guard let url = request.url?.absoluteString else {
             throw HTTPClientError.invalidURL
         }
@@ -24,7 +28,18 @@ struct CurlExporter {
             "--header \(shellQuote("\(name): \(value)"))"
         })
 
-        if let body = request.httpBody,
+        if draft.bodyKind == .formURLEncoded {
+            arguments.append(contentsOf: draft.formItems
+                .filter { $0.isEnabled && !$0.name.isEmpty }
+                .map { "--data-urlencode \(shellQuote("\($0.name)=\($0.value)"))" })
+        } else if draft.bodyKind == .multipart {
+            arguments.append(contentsOf: draft.multipartParts
+                .filter { $0.isEnabled && !$0.name.isEmpty }
+                .map { part in
+                    let value = part.kind == .file ? "@\(part.filePath)" : part.value
+                    return "--form \(shellQuote("\(part.name)=\(value)"))"
+                })
+        } else if let body = request.httpBody,
            let bodyText = String(data: body, encoding: .utf8),
            !bodyText.isEmpty {
             arguments.append("--data-raw \(shellQuote(bodyText))")

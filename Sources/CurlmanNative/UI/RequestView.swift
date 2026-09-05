@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct RequestView: View {
@@ -60,7 +61,7 @@ struct RequestView: View {
             case .body: BodyEditor(model: model)
             case .params: KeyValueEditor(title: "Query parameters", items: $model.draft.queryItems)
             case .headers: KeyValueEditor(title: "Request headers", items: $model.draft.headers)
-            case .auth: AuthenticationEditor(authentication: $model.draft.authentication)
+            case .auth: AuthenticationEditor(draft: $model.draft)
             }
         }
         .background(Color(nsColor: .textBackgroundColor))
@@ -85,19 +86,24 @@ private struct BodyEditor: View {
 
     var body: some View {
         Group {
-            if model.draft.bodyKind == .none {
+            switch model.draft.bodyKind {
+            case .none:
                 VStack(spacing: 8) {
                     Image(systemName: "doc.plaintext").font(.title2).foregroundStyle(.tertiary)
                     Text("This request has no body").foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
+            case .json, .raw:
                 CodeTextView(
                     text: $model.draft.body,
                     placeholder: model.draft.bodyKind == .json
                         ? "{\n  \"key\": \"value\"\n}"
                         : "Enter request body"
                 )
+            case .formURLEncoded:
+                KeyValueEditor(title: "Form fields", items: $model.draft.formItems)
+            case .multipart:
+                MultipartEditor(parts: $model.draft.multipartParts)
             }
         }
     }
@@ -151,31 +157,131 @@ struct KeyValueEditor: View {
     }
 }
 
+private struct MultipartEditor: View {
+    @Binding var parts: [MultipartPart]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Multipart fields").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button {
+                    parts.append(MultipartPart())
+                } label: {
+                    Label("Add", systemImage: "plus")
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 38)
+            .background(Color(nsColor: .controlBackgroundColor))
+            .overlay(alignment: .bottom) { Divider() }
+
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(Array(parts.indices), id: \.self) { index in
+                        HStack(spacing: 8) {
+                            Toggle("", isOn: $parts[index].isEnabled)
+                                .labelsHidden()
+                                .toggleStyle(.checkbox)
+                            TextField("Name", text: $parts[index].name)
+                                .textFieldStyle(.roundedBorder)
+                            Picker("Kind", selection: $parts[index].kind) {
+                                ForEach(MultipartPartKind.allCases) { kind in
+                                    Text(kind.rawValue).tag(kind)
+                                }
+                            }
+                            .labelsHidden()
+                            .frame(width: 74)
+                            if parts[index].kind == .text {
+                                TextField("Value", text: $parts[index].value)
+                                    .textFieldStyle(.roundedBorder)
+                            } else {
+                                Button(parts[index].filePath.isEmpty ? "Choose File…" : URL(fileURLWithPath: parts[index].filePath).lastPathComponent) {
+                                    chooseFile(for: index)
+                                }
+                                .lineLimit(1)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            Button(role: .destructive) {
+                                parts.remove(at: index)
+                            } label: {
+                                Image(systemName: "trash")
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                    }
+                }
+                .padding(14)
+            }
+        }
+        .onAppear {
+            if parts.isEmpty { parts = [MultipartPart()] }
+        }
+    }
+
+    private func chooseFile(for index: Int) {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Use File"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        parts[index].filePath = url.path
+        parts[index].isFileAccessApproved = true
+    }
+}
+
 private struct AuthenticationEditor: View {
-    @Binding var authentication: Authentication
+    @Binding var draft: HTTPRequestDraft
 
     var body: some View {
         Form {
-            Picker("Authentication", selection: $authentication.kind) {
+            Picker("Authentication", selection: $draft.authentication.kind) {
                 ForEach(AuthenticationKind.allCases) { kind in Text(kind.rawValue).tag(kind) }
             }
             .pickerStyle(.segmented)
 
-            switch authentication.kind {
+            switch draft.authentication.kind {
             case .none:
                 Text("No authentication will be added to this request.")
                     .foregroundStyle(.secondary)
             case .bearer:
-                SecureField("Bearer token", text: $authentication.secret)
+                SecureField("Bearer token", text: $draft.authentication.secret)
                 Text("The token is saved in macOS Keychain and excluded from history.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             case .basic:
-                TextField("Username", text: $authentication.username)
-                SecureField("Password", text: $authentication.secret)
+                TextField("Username", text: $draft.authentication.username)
+                SecureField("Password", text: $draft.authentication.secret)
                 Text("The password is saved in macOS Keychain and excluded from history.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            case .apiKey:
+                TextField("Key name", text: $draft.authentication.apiKeyName)
+                SecureField("Key value", text: $draft.authentication.secret)
+                Picker("Add to", selection: $draft.authentication.apiKeyPlacement) {
+                    ForEach(APIKeyPlacement.allCases) { placement in
+                        Text(placement.rawValue).tag(placement)
+                    }
+                }
+                Text("The key value is saved in macOS Keychain and excluded from history.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Request behavior") {
+                HStack {
+                    TextField("Timeout", value: $draft.timeoutInterval, format: .number.precision(.fractionLength(0)))
+                        .frame(width: 72)
+                    Text("seconds")
+                        .foregroundStyle(.secondary)
+                }
+                Picker("Redirects", selection: $draft.redirectPolicy) {
+                    ForEach(RedirectPolicy.allCases) { policy in Text(policy.rawValue).tag(policy) }
+                }
+                Picker("Cookies", selection: $draft.cookiePolicy) {
+                    ForEach(CookiePolicy.allCases) { policy in Text(policy.rawValue).tag(policy) }
+                }
             }
         }
         .formStyle(.grouped)
