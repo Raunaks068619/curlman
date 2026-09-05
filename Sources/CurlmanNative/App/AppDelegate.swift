@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panelController: PanelController?
     private var hotKey: GlobalHotKey?
     private(set) var model: AppModel?
+    private let updateChecker = UpdateChecker()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -56,6 +57,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
+    @objc private func showAbout() {
+        NSApp.orderFrontStandardAboutPanel(options: [
+            .applicationName: "Curlman",
+            .applicationVersion: appVersion,
+            .credits: NSAttributedString(string: "A fast, local-first API client."),
+        ])
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func showHelp() {
+        openWebPage(URL(string: "https://github.com/Raunaks068619/curlman#the-workflow")!)
+    }
+
+    @objc private func showPrivacy() {
+        openWebPage(URL(string: "https://github.com/Raunaks068619/curlman#privacy-and-security")!)
+    }
+
+    @objc private func checkForUpdates() {
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                switch try await updateChecker.check(currentVersion: appVersion) {
+                case let .updateAvailable(release):
+                    let alert = NSAlert()
+                    alert.messageText = "Curlman (release.version) is available"
+                    alert.informativeText = "Download the signed release from GitHub."
+                    alert.addButton(withTitle: "View Release")
+                    alert.addButton(withTitle: "Later")
+                    NSApp.activate(ignoringOtherApps: true)
+                    if alert.runModal() == .alertFirstButtonReturn {
+                        openWebPage(release.pageURL)
+                    }
+                case .current:
+                    showInformationAlert(
+                        title: "Curlman is up to date",
+                        message: "You are using version \(appVersion)."
+                    )
+                }
+            } catch {
+                let alert = NSAlert(error: error)
+                alert.messageText = "Could not check for updates"
+                NSApp.activate(ignoringOtherApps: true)
+                alert.runModal()
+            }
+        }
+    }
+
     @objc private func quit() {
         NSApp.terminate(nil)
     }
@@ -68,6 +116,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "New Request", action: #selector(newRequest), keyEquivalent: "n"))
         menu.addItem(NSMenuItem(title: "History", action: #selector(showHistory), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Settings…", action: #selector(showSettings), keyEquivalent: ","))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Curlman Help", action: #selector(showHelp), keyEquivalent: "?"))
+        menu.addItem(NSMenuItem(title: "Privacy", action: #selector(showPrivacy), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "About Curlman", action: #selector(showAbout), keyEquivalent: ""))
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Quit Curlman", action: #selector(quit), keyEquivalent: "q"))
         menu.items.forEach { $0.target = self }
@@ -87,5 +140,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         statusItem?.button?.toolTip = "Curlman · \(shortcut.displayName)"
         return true
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development"
+    }
+
+    private func openWebPage(_ url: URL) {
+        NSWorkspace.shared.open(url)
+    }
+
+    private func showInformationAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 }
