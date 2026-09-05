@@ -6,6 +6,7 @@ final class PanelController: NSWindowController, NSWindowDelegate {
     private static let compactSize = NSSize(width: 420, height: 52)
     private static let expandedMinimumSize = NSSize(width: 600, height: 400)
     private let model: AppModel
+    private let onboardingState: OnboardingState
     private let defaults = UserDefaults.standard
     private var expandedFrame: NSRect?
 
@@ -16,6 +17,7 @@ final class PanelController: NSWindowController, NSWindowDelegate {
         registerShortcut: @escaping (GlobalShortcut) -> Bool
     ) {
         self.model = model
+        self.onboardingState = onboardingState
         let panel = InteractivePanel(
             contentRect: NSRect(x: 0, y: 0, width: 780, height: 520),
             styleMask: [.titled, .fullSizeContentView, .resizable],
@@ -52,6 +54,7 @@ final class PanelController: NSWindowController, NSWindowDelegate {
                 dragAction: { [weak panel] event in panel?.performDrag(with: event) }
             )
         )
+        hostingView.sizingOptions = []
         hostingView.translatesAutoresizingMaskIntoConstraints = false
         let containerView = NSView()
         containerView.wantsLayer = true
@@ -93,6 +96,9 @@ final class PanelController: NSWindowController, NSWindowDelegate {
 
     func showPanel() {
         guard let window else { return }
+        if !onboardingState.isComplete && !model.isCompact {
+            configureOnboardingFrame(window)
+        }
         if !defaults.bool(forKey: "hasPositionedPanel") {
             placeTopRight(window)
         } else {
@@ -113,6 +119,19 @@ final class PanelController: NSWindowController, NSWindowDelegate {
             restoreExpanded()
         }
         showPanel()
+    }
+
+    private func configureOnboardingFrame(_ window: NSWindow) {
+        let targetSize = NSSize(width: 780, height: 520)
+        guard window.frame.size != targetSize else { return }
+        let current = window.frame
+        let target = NSRect(
+            x: current.maxX - targetSize.width,
+            y: current.maxY - targetSize.height,
+            width: targetSize.width,
+            height: targetSize.height
+        )
+        window.setFrame(target, display: false)
     }
 
     func toggleCompact() {

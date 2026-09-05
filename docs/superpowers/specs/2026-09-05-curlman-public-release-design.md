@@ -142,7 +142,7 @@ Onboarding is a minimal two-page flow. It is skippable, repeatable from Help, ke
 - Page 2 contains the editable global shortcut and an optional safe example request.
 - A fixed footer provides two progress dots, Back on page 2, and one primary Continue or Start Using Curlman action.
 
-Both pages use one centered alignment guide and fit the minimum expanded window without scrolling or clipping. Page changes use a restrained directional transition that is removed when Reduce Motion is enabled.
+Both pages use a centered 600-point content column inside the 780-point window, with generous vertical grouping and readable 30-point page headlines. They fit the minimum expanded window without scrolling or clipping. Page changes use a restrained directional transition that is removed when Reduce Motion is enabled.
 
 The shortcut control presents the platform default and allows recording a replacement in place. A registration conflict keeps the previous working shortcut and explains how to choose another.
 
@@ -332,7 +332,7 @@ npm run dev
 - JSON, XML, HTML, text, binary, image, and large response handling.
 - History migrations, retention, redaction, import, export, recovery, and exact restoration.
 - Credential adapter behavior using test doubles rather than real secrets.
-- One-page onboarding completion, shortcut editing, example-request, and GitHub-card states.
+- Two-page onboarding navigation and completion, shortcut editing, example-request, and GitHub-card states.
 
 ### 12.2 UI and accessibility tests
 
@@ -415,7 +415,7 @@ Required documentation:
 - [ ] Homebrew installs and launches the same native build.
 - [ ] Windows and Linux installers launch in clean environments.
 - [ ] `npm install` and `npm run dev` work from a fresh clone.
-- [ ] The one-page onboarding can be completed with only the keyboard.
+- [ ] The two-page onboarding can be completed with only the keyboard.
 - [ ] The onboarding request produces a visible result or a clear network error and is saved to History.
 - [ ] The onboarding GitHub card displays the release star-count snapshot and opens the expected public repository only after activation.
 - [ ] Secrets are absent from history, logs, exports, fixtures, and release artifacts.

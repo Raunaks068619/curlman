@@ -12,6 +12,16 @@ final class OnboardingStateTests: XCTestCase {
         XCTAssertTrue(OnboardingState(defaults: defaults).isComplete)
     }
 
+    func testTwoPageNavigationIsDeterministic() throws {
+        let state = OnboardingState(defaults: try makeDefaults())
+
+        XCTAssertEqual(state.page, .introduction)
+        state.continueToSetup()
+        XCTAssertEqual(state.page, .setup)
+        state.returnToIntroduction()
+        XCTAssertEqual(state.page, .introduction)
+    }
+
     func testExistingInstallationIsNotForcedThroughOnboarding() throws {
         let defaults = try makeDefaults()
         let state = OnboardingState(defaults: defaults)
@@ -29,6 +39,7 @@ final class OnboardingStateTests: XCTestCase {
         state.startOver()
 
         XCTAssertFalse(state.isComplete)
+        XCTAssertEqual(state.page, .introduction)
     }
 
     private func makeDefaults() throws -> UserDefaults {
