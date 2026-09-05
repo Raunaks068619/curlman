@@ -38,7 +38,7 @@ Paste a multiline POST request, inspect its formatted JSON body, send it with th
 | Built with | Swift, SwiftUI, AppKit | Electron, React, TypeScript |
 | Runs from | Downloadable DMG | Source with Node.js and npm |
 | Desktop behavior | Menu-bar panel, Keychain, native networking | Tray app, encrypted credential vault, Electron networking |
-| Requirements | Apple Silicon, macOS 14+ | Node.js 22.12+ |
+| Requirements | Apple Silicon or Intel, macOS 14+ | Node.js 22.12+ |
 | Start | [Download the DMG](https://github.com/Raunaks068619/curlman/releases/latest/download/Curlman.dmg) | `npm install && npm run dev` |
 
 Both editions share the same focused workflow, automatic history, editable requests, cURL export, compact mode, and keyboard-first interaction.
@@ -84,7 +84,9 @@ The response interface stays hidden until a response exists. History is an on-de
 
 - Import multiline cURL commands without executing them in a shell.
 - Edit GET, POST, PUT, PATCH, DELETE, HEAD, and OPTIONS requests.
-- Edit query params, headers, JSON or raw bodies, Bearer auth, and Basic auth.
+- Edit query params, headers, JSON, raw, form URL-encoded, or multipart bodies.
+- Use Bearer, Basic, or API-key authentication with secrets stored in Keychain.
+- Control request timeout, redirects, and cookie-session behavior.
 - Automatically format imported JSON with syntax highlighting.
 - Copy the currently edited request back to a runnable cURL command.
 - Inspect pretty or raw responses and response headers.
@@ -105,6 +107,7 @@ Curlman currently understands the common request flags below:
 -H, --header
 -d, --data, --data-raw, --data-binary
 --data-urlencode
+-F, --form
 -G, --get
 -u, --user
 -L, --location, --location-trusted
@@ -112,7 +115,7 @@ Curlman currently understands the common request flags below:
 
 URL query strings are moved into editable Params. JSON bodies are formatted automatically. With `--get`, URL-encoded data is converted into query params.
 
-Unsupported flags are shown as warnings instead of being silently executed. File-based `--data-urlencode` input is intentionally ignored for safety.
+Unsupported flags are shown as warnings instead of being silently executed. Imported multipart files remain blocked until you explicitly approve access in the request editor.
 
 ## Keyboard shortcuts
 
@@ -154,7 +157,7 @@ Electron source lives in [`apps/electron`](apps/electron). CI runs type checking
 
 ### Native macOS
 
-The native app requires macOS 14+, Apple Silicon, and Xcode 15 or newer.
+The native app requires macOS 14+ and Xcode 15 or newer. Release builds are universal for Apple Silicon and Intel.
 
 ```sh
 swift test
@@ -176,10 +179,9 @@ scripts/                 Packaging and verification scripts
 
 ## Current limitations
 
-- The native build supports Apple Silicon and macOS 14 or newer.
 - The native DMG is not notarized with an Apple Developer ID.
 - Electron installers are not yet published for Windows or Linux.
-- Multipart uploads, client certificates, proxy settings, cookie jars, and shell substitutions are not currently imported.
+- Client certificates, proxy settings, cookie jars, and shell substitutions are not currently imported.
 
 ## Contributing
 
