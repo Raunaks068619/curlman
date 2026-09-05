@@ -136,12 +136,13 @@ Request, Response, and History are top-level tabs. History is not a persistent s
 
 ### 5.2 First-run onboarding
 
-Onboarding is one complete page rather than a multi-step wizard. It is skippable, repeatable from Help, keyboard accessible, and never sends a request without user action.
+Onboarding is a minimal two-page flow. It is skippable, repeatable from Help, keyboard accessible, and never sends a request without user action.
 
-The page uses a structured two-column layout:
+- Page 1 introduces Curlman, its lightweight purpose, the open, edit, send, and local-history workflow, the local-only privacy promise, and the GitHub repository card.
+- Page 2 contains the editable global shortcut and an optional safe example request.
+- A fixed footer provides two progress dots, Back on page 2, and one primary Continue or Start Using Curlman action.
 
-- The identity side introduces Curlman, its lightweight purpose, the open, edit, send, and local-history workflow, plus the local-only privacy promise.
-- The quick-setup side contains the editable global shortcut, an optional safe example request, the GitHub repository card, and the primary Start Using Curlman action.
+Both pages use one centered alignment guide and fit the minimum expanded window without scrolling or clipping. Page changes use a restrained directional transition that is removed when Reduce Motion is enabled.
 
 The shortcut control presents the platform default and allows recording a replacement in place. A registration conflict keeps the previous working shortcut and explains how to choose another.
 

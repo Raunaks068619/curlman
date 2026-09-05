@@ -79,11 +79,11 @@ Files:
 
 Tasks:
 
-1. Implement the approved one-page, two-column onboarding layout.
-2. Present Curlman’s open, edit, send, and local-history workflow with clear native hierarchy.
-3. Allow editing and registering the global shortcut in place without requesting Accessibility permission.
-4. Load the safe example request without sending it automatically.
-5. Add a GitHub repository card with a release-time star-count snapshot and an explicit Star on GitHub action.
+1. Implement the approved minimal two-page onboarding layout with a fixed footer.
+2. Keep the description, benefits, privacy promise, and GitHub repository card on page 1.
+3. Keep shortcut configuration and the optional safe request on page 2.
+4. Allow editing and registering the global shortcut in place without requesting Accessibility permission.
+5. Load the safe example request without sending it automatically.
 6. Allow skipping and reopening onboarding from Help.
 7. Persist onboarding completion and restore unsent drafts after restart.
 8. Add keyboard focus, VoiceOver labels, semantic status announcements, and reduced-motion behavior.
