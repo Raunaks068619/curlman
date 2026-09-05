@@ -1,16 +1,8 @@
 import Foundation
 
-enum OnboardingStep: Int, CaseIterable, Sendable {
-    case welcome
-    case shortcut
-    case request
-}
-
 @MainActor
 final class OnboardingState: ObservableObject {
     @Published private(set) var isComplete: Bool
-    @Published private(set) var currentStep: OnboardingStep = .welcome
-    @Published private(set) var didHideWithShortcut = false
 
     private static let completionKey = "onboardingCompletedV1"
     private let defaults: UserDefaults
@@ -26,20 +18,6 @@ final class OnboardingState: ObservableObject {
         complete()
     }
 
-    func continueFromWelcome() {
-        guard !isComplete else { return }
-        currentStep = .shortcut
-    }
-
-    func recordShortcutInvocation(panelWasVisible: Bool) {
-        guard !isComplete, currentStep == .shortcut else { return }
-        if panelWasVisible {
-            didHideWithShortcut = true
-        } else if didHideWithShortcut {
-            currentStep = .request
-        }
-    }
-
     func complete() {
         isComplete = true
         defaults.set(true, forKey: Self.completionKey)
@@ -47,8 +25,6 @@ final class OnboardingState: ObservableObject {
 
     func startOver() {
         isComplete = false
-        currentStep = .welcome
-        didHideWithShortcut = false
         defaults.set(false, forKey: Self.completionKey)
     }
 }

@@ -34,7 +34,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 registerShortcut: { [weak self] shortcut in self?.registerShortcut(shortcut) ?? false }
             )
             configureStatusItem()
-            hotKey = GlobalHotKey { [weak self] in self?.handleGlobalShortcut() }
+            hotKey = GlobalHotKey { [weak self] in self?.panelController?.toggle() }
             if hotKey?.register(shortcutPreferences.shortcut) == false {
                 notifyShortcutConflict()
             }
@@ -177,9 +177,4 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
 
-    private func handleGlobalShortcut() {
-        let wasVisible = panelController?.isPanelVisible ?? false
-        onboardingState.recordShortcutInvocation(panelWasVisible: wasVisible)
-        panelController?.toggle()
-    }
 }

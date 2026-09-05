@@ -3,23 +3,11 @@ import XCTest
 
 @MainActor
 final class OnboardingStateTests: XCTestCase {
-    func testNewInstallationCompletesLearnByDoingFlow() throws {
+    func testNewInstallationCanCompleteOnboarding() throws {
         let defaults = try makeDefaults()
         let state = OnboardingState(defaults: defaults)
 
         XCTAssertFalse(state.isComplete)
-        XCTAssertEqual(state.currentStep, .welcome)
-
-        state.continueFromWelcome()
-        XCTAssertEqual(state.currentStep, .shortcut)
-
-        state.recordShortcutInvocation(panelWasVisible: true)
-        XCTAssertTrue(state.didHideWithShortcut)
-        XCTAssertEqual(state.currentStep, .shortcut)
-
-        state.recordShortcutInvocation(panelWasVisible: false)
-        XCTAssertEqual(state.currentStep, .request)
-
         state.complete()
         XCTAssertTrue(OnboardingState(defaults: defaults).isComplete)
     }
@@ -41,8 +29,6 @@ final class OnboardingStateTests: XCTestCase {
         state.startOver()
 
         XCTAssertFalse(state.isComplete)
-        XCTAssertEqual(state.currentStep, .welcome)
-        XCTAssertFalse(state.didHideWithShortcut)
     }
 
     private func makeDefaults() throws -> UserDefaults {

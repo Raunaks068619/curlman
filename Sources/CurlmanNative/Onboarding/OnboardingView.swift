@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct OnboardingView: View {
@@ -5,166 +6,307 @@ struct OnboardingView: View {
     @ObservedObject var preferences: ShortcutPreferences
     @ObservedObject var model: AppModel
     let registerShortcut: (GlobalShortcut) -> Bool
+    let metadata: BuildMetadata
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shortcutConflict: String?
 
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 7) {
-                ForEach(OnboardingStep.allCases, id: \.rawValue) { step in
-                    Circle()
-                        .fill(step.rawValue <= state.currentStep.rawValue ? Color.accentColor : Color.secondary.opacity(0.25))
-                        .frame(width: 6, height: 6)
-                        .accessibilityHidden(true)
-                }
-                Spacer()
-                Button("Skip") { state.complete() }
-                    .buttonStyle(.borderless)
-                    .accessibilityHint("Closes onboarding without sending a request")
-            }
-            .padding(.horizontal, 18)
-            .frame(height: 40)
+    private let exampleURL = "https://api.github.com/zen"
+    private let repositoryURL = URL(string: "https://github.com/Raunaks068619/curlman")!
 
-            Group {
-                switch state.currentStep {
-                case .welcome:
-                    welcome
-                case .shortcut:
-                    shortcut
-                case .request:
-                    exampleRequest
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: state.currentStep)
+    init(
+        state: OnboardingState,
+        preferences: ShortcutPreferences,
+        model: AppModel,
+        registerShortcut: @escaping (GlobalShortcut) -> Bool,
+        metadata: BuildMetadata = BuildMetadata()
+    ) {
+        self.state = state
+        self.preferences = preferences
+        self.model = model
+        self.registerShortcut = registerShortcut
+        self.metadata = metadata
+    }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            identityPanel
+                .frame(width: 310)
+            Divider()
+            setupPanel
         }
         .background(Color(nsColor: .textBackgroundColor))
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Curlman welcome, step \(state.currentStep.rawValue + 1) of 3")
+        .accessibilityLabel("Welcome to Curlman")
     }
 
-    private var welcome: some View {
-        VStack(spacing: 18) {
-            Image(nsImage: NSApplication.shared.applicationIconImage)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 72, height: 72)
-                .accessibilityHidden(true)
-            VStack(spacing: 7) {
-                Text("Paste cURL. Test it. Find it later.")
-                    .font(.title2.weight(.semibold))
-                Text("Curlman stays in your menu bar, needs no account, and keeps request history on this Mac.")
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 430)
+    private var identityPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 12) {
+                Image(nsImage: NSApplication.shared.applicationIconImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 50, height: 50)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Curlman")
+                        .font(.title3.weight(.semibold))
+                    Text("Fast, local API testing")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
-            Button("Set Up Curlman") { state.continueFromWelcome() }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .keyboardShortcut(.defaultAction)
+
+            Text("From copied cURL to clear response in seconds.")
+                .font(.system(size: 25, weight: .semibold))
+                .tracking(-0.5)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 28)
+
+            Text("Call Curlman from anywhere, edit what matters, and keep every run close without opening a full API workspace.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 9)
+
+            VStack(alignment: .leading, spacing: 17) {
+                BenefitRow(icon: "command", title: "Open instantly", detail: "Use your shortcut above any app.")
+                BenefitRow(icon: "arrow.up.right", title: "Paste, edit, send", detail: "Change headers, params, auth, and body.")
+                BenefitRow(icon: "clock.arrow.circlepath", title: "Find it later", detail: "Every run enters local History.")
+            }
+            .padding(.top, 28)
+
+            Spacer(minLength: 18)
+
+            Label("No account. No Curlman cloud.", systemImage: "checkmark.shield")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("No account required. Requests stay on this device.")
         }
-        .padding(28)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 30)
+        .background(Color(nsColor: .controlBackgroundColor))
     }
 
-    private var shortcut: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "command")
-                .font(.system(size: 36, weight: .medium))
+    private var setupPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("QUICK SETUP")
+                .font(.caption2.weight(.bold))
+                .tracking(0.8)
                 .foregroundStyle(Color.accentColor)
-                .accessibilityHidden(true)
-            VStack(spacing: 7) {
-                Text("Open Curlman from anywhere")
-                    .font(.title2.weight(.semibold))
-                Text("Press the shortcut to hide this panel, then press it again to bring Curlman back.")
+            Text("Everything you need, on one page.")
+                .font(.title2.weight(.semibold))
+                .tracking(-0.3)
+                .padding(.top, 6)
+            Text("Confirm your shortcut, optionally try a safe request, then start using Curlman.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .padding(.top, 5)
+
+            SectionLabel(title: "Global shortcut", note: "Click the keys to change")
+                .padding(.top, 23)
+            shortcutControl
+
+            SectionLabel(title: "Try your first request", note: "Nothing sends automatically")
+                .padding(.top, 19)
+            exampleRequest
+
+            githubCard
+                .padding(.top, 20)
+
+            Spacer(minLength: 16)
+            Divider()
+                .padding(.bottom, 15)
+            HStack {
+                Text("Reopen this anytime from Help.")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 430)
-            }
-            HStack(spacing: 10) {
-                Text("Global shortcut")
-                    .fontWeight(.medium)
-                ShortcutRecorder(shortcut: preferences.shortcut, onCapture: applyShortcut)
-                    .frame(width: 112, height: 28)
-            }
-            if let shortcutConflict {
-                Label(shortcutConflict, systemImage: "exclamationmark.triangle.fill")
-                    .font(.callout)
-                    .foregroundStyle(.orange)
-            } else if state.didHideWithShortcut {
-                Label("Shortcut detected. Press \(preferences.shortcut.displayName) once more.", systemImage: "checkmark.circle.fill")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                Label("Waiting for \(preferences.shortcut.displayName)", systemImage: "keyboard")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Start Using Curlman") { state.complete() }
+                    .buttonStyle(.borderedProminent)
+                    .keyboardShortcut(.defaultAction)
+                    .accessibilityHint("Closes welcome and opens the request workspace")
             }
         }
-        .padding(28)
+        .padding(.horizontal, 28)
+        .padding(.top, 27)
+        .padding(.bottom, 22)
+    }
+
+    private var shortcutControl: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "command")
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 24, height: 24)
+                .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Show or hide Curlman from anywhere")
+                    .font(.callout.weight(.medium))
+                if let shortcutConflict {
+                    Text(shortcutConflict)
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                } else {
+                    Text("No Accessibility permission needed")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            ShortcutRecorder(shortcut: preferences.shortcut, onCapture: applyShortcut)
+                .frame(width: 104, height: 27)
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 48)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 9))
+        .overlay {
+            RoundedRectangle(cornerRadius: 9)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+        }
     }
 
     private var exampleRequest: some View {
-        VStack(spacing: 18) {
-            Image(systemName: model.response == nil ? "paperplane" : "checkmark.circle.fill")
-                .font(.system(size: 36, weight: .medium))
-                .foregroundStyle(model.response == nil ? Color.accentColor : .green)
-                .accessibilityHidden(true)
-            VStack(spacing: 7) {
-                Text(model.response == nil ? "Send your first request" : "You’re ready")
-                    .font(.title2.weight(.semibold))
-                Text(exampleDescription)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: 460)
-            }
-            Text("curl https://api.github.com/zen")
-                .font(.system(.body, design: .monospaced))
-                .textSelection(.enabled)
-                .padding(.horizontal, 14)
-                .frame(height: 38)
-                .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 7))
-
-            if model.response == nil {
-                Button(model.isSending ? "Cancel Request" : "Send Example") {
-                    model.send()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .keyboardShortcut(.return, modifiers: .command)
-            } else {
-                Button("Start Using Curlman") { state.complete() }
+        VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 7) {
+                Text("GET")
+                    .font(.system(.caption, design: .monospaced).weight(.semibold))
+                    .foregroundStyle(.blue)
+                    .frame(width: 48)
+                Text(exampleURL)
+                    .font(.system(.caption, design: .monospaced))
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button(model.isSending ? "Cancel" : "Send") { sendExample() }
                     .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .keyboardShortcut(.defaultAction)
+                    .keyboardShortcut(.return, modifiers: .command)
             }
+            .padding(.horizontal, 10)
+            .frame(height: 40)
+            .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+            }
+
+            Label(exampleStatus, systemImage: exampleStatusIcon)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .accessibilityLabel(exampleStatus)
         }
-        .padding(28)
-        .onAppear(perform: loadExampleIfNeeded)
     }
 
-    private var exampleDescription: String {
+    private var githubCard: some View {
+        HStack(spacing: 11) {
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 34, height: 34)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Raunaks068619/curlman")
+                    .font(.system(.caption, design: .monospaced).weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .lineLimit(1)
+                Text(GitHubStarCopy.supporting(metadata.githubStars))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Label(GitHubStarCopy.count(metadata.githubStars), systemImage: "star.fill")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.yellow)
+                .padding(.horizontal, 9)
+                .frame(height: 28)
+                .background(Color.yellow.opacity(0.12), in: Capsule())
+            Button {
+                NSWorkspace.shared.open(repositoryURL)
+            } label: {
+                Label("Star on GitHub", systemImage: "star")
+            }
+            .buttonStyle(.bordered)
+            .accessibilityHint("Opens the public Curlman repository in your browser")
+        }
+        .padding(.horizontal, 12)
+        .frame(height: 64)
+        .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 11))
+        .overlay {
+            RoundedRectangle(cornerRadius: 11)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 0.5)
+        }
+    }
+
+    private var exampleStatus: String {
+        if model.isSending { return "Sending request…" }
         guard let response = model.response else {
-            return "The request is ready. Press Command-Return or choose Send Example. Curlman will save the result to History automatically."
+            return "Press Command-Return. Curlman saves the result to History."
         }
         if response.isTransportFailure {
-            return "The network did not respond, but Curlman captured the attempt in History. You can retry it later."
+            return "Attempt saved to History. You can retry when the network is available."
         }
-        return "Response \(response.statusLabel) is saved in History."
+        return "Response \(response.statusLabel) saved to History."
+    }
+
+    private var exampleStatusIcon: String {
+        if model.isSending { return "arrow.triangle.2.circlepath" }
+        return model.response == nil ? "return" : "checkmark.circle.fill"
     }
 
     private func applyShortcut(_ shortcut: GlobalShortcut) {
         guard registerShortcut(shortcut) else {
-            shortcutConflict = "That shortcut is already used by another application."
+            shortcutConflict = "That shortcut is already in use."
             return
         }
         preferences.save(shortcut)
         shortcutConflict = nil
     }
 
-    private func loadExampleIfNeeded() {
-        guard model.response == nil,
-              model.draft.urlString != "https://api.github.com/zen" else { return }
-        model.importCurl("curl https://api.github.com/zen")
+    private func sendExample() {
+        if model.isSending {
+            model.send()
+            return
+        }
+        model.importCurl("curl \(exampleURL)")
+        model.send()
+    }
+}
+
+private struct BenefitRow: View {
+    let icon: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28, height: 28)
+                .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 7))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.callout.weight(.medium))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct SectionLabel: View {
+    let title: String
+    let note: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+            Spacer()
+            Text(note)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.bottom, 7)
     }
 }

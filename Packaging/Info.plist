@@ -22,6 +22,8 @@
     <string>0.2.7</string>
     <key>CFBundleVersion</key>
     <string>7</string>
+    <key>CurlmanGitHubStars</key>
+    <integer>0</integer>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.developer-tools</string>
     <key>LSMinimumSystemVersion</key>

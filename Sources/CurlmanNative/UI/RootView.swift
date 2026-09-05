@@ -23,7 +23,9 @@ struct RootView: View {
                     PanelTitleBar(
                         closeAction: closeAction,
                         minimizeAction: minimizeAction,
-                        dragAction: dragAction
+                        dragAction: dragAction,
+                        showsSkip: !onboardingState.isComplete,
+                        skipAction: { onboardingState.complete() }
                     )
                     if onboardingState.isComplete {
                         RequestCommandBar(model: model)
@@ -77,6 +79,8 @@ private struct PanelTitleBar: View {
     let closeAction: () -> Void
     let minimizeAction: () -> Void
     let dragAction: (NSEvent) -> Void
+    let showsSkip: Bool
+    let skipAction: () -> Void
 
     var body: some View {
         ZStack {
@@ -91,11 +95,19 @@ private struct PanelTitleBar: View {
                     .foregroundStyle(.secondary)
                     .allowsHitTesting(false)
                 Spacer()
-                Image(systemName: "menubar.rectangle")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.tertiary)
-                    .frame(width: 32)
-                    .allowsHitTesting(false)
+                if showsSkip {
+                    Button("Skip", action: skipAction)
+                        .buttonStyle(.borderless)
+                        .font(.caption)
+                        .frame(width: 42)
+                        .accessibilityHint("Closes onboarding")
+                } else {
+                    Image(systemName: "menubar.rectangle")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 42)
+                        .allowsHitTesting(false)
+                }
             }
             .padding(.horizontal, 12)
         }

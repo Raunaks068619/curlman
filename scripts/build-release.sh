@@ -30,6 +30,14 @@ done
 
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST")"
 BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$INFO_PLIST")"
+GITHUB_STARS="${CURLMAN_GITHUB_STARS:-$(/usr/libexec/PlistBuddy -c 'Print :CurlmanGitHubStars' "$INFO_PLIST")}"
+
+case "$GITHUB_STARS" in
+    ''|*[!0-9]*)
+        echo "CURLMAN_GITHUB_STARS must be a non-negative integer." >&2
+        exit 1
+        ;;
+esac
 
 rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR" "$OUTPUT_DIR"
@@ -62,6 +70,7 @@ lipo -create \
     -output "$APP_BUNDLE/Contents/MacOS/CurlmanNative"
 
 cp "$INFO_PLIST" "$APP_BUNDLE/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CurlmanGitHubStars $GITHUB_STARS" "$APP_BUNDLE/Contents/Info.plist"
 cp "$ICON_SOURCE" "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
 cp "$PRIVACY_MANIFEST" "$APP_BUNDLE/Contents/Resources/PrivacyInfo.xcprivacy"
 chmod 755 "$APP_BUNDLE/Contents/MacOS/CurlmanNative"
@@ -130,6 +139,7 @@ plutil -insert version -string "$VERSION" "$MANIFEST_PLIST"
 plutil -insert build -string "$BUILD_NUMBER" "$MANIFEST_PLIST"
 plutil -insert architectures -json '["arm64","x86_64"]' "$MANIFEST_PLIST"
 plutil -insert signingIdentity -string "$SIGN_IDENTITY" "$MANIFEST_PLIST"
+plutil -insert githubStars -integer "$GITHUB_STARS" "$MANIFEST_PLIST"
 if [[ "$NOTARIZE" == "1" ]]; then
     plutil -insert notarized -bool YES "$MANIFEST_PLIST"
 else
