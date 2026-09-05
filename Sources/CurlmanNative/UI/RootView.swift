@@ -3,6 +3,9 @@ import SwiftUI
 
 struct RootView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var onboardingState: OnboardingState
+    @ObservedObject var shortcutPreferences: ShortcutPreferences
+    let registerShortcut: (GlobalShortcut) -> Bool
     let closeAction: () -> Void
     let minimizeAction: () -> Void
     let dragAction: (NSEvent) -> Void
@@ -22,14 +25,23 @@ struct RootView: View {
                         minimizeAction: minimizeAction,
                         dragAction: dragAction
                     )
-                    RequestCommandBar(model: model)
-                    TopTabBar(model: model)
-                    if let error = model.inlineError {
-                        InlineMessage(text: error, systemImage: "exclamationmark.triangle.fill", color: .orange)
-                    } else if !model.curlWarnings.isEmpty {
-                        InlineMessage(text: model.curlWarnings.joined(separator: "  "), systemImage: "info.circle.fill", color: .secondary)
+                    if onboardingState.isComplete {
+                        RequestCommandBar(model: model)
+                        TopTabBar(model: model)
+                        if let error = model.inlineError {
+                            InlineMessage(text: error, systemImage: "exclamationmark.triangle.fill", color: .orange)
+                        } else if !model.curlWarnings.isEmpty {
+                            InlineMessage(text: model.curlWarnings.joined(separator: "  "), systemImage: "info.circle.fill", color: .secondary)
+                        }
+                        activeContent
+                    } else {
+                        OnboardingView(
+                            state: onboardingState,
+                            preferences: shortcutPreferences,
+                            model: model,
+                            registerShortcut: registerShortcut
+                        )
                     }
-                    activeContent
                 }
             }
         }

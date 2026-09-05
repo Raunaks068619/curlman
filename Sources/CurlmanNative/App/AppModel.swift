@@ -28,7 +28,9 @@ enum ResponseSection: String, CaseIterable, Identifiable {
 
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var draft = HTTPRequestDraft.empty
+    @Published var draft: HTTPRequestDraft {
+        didSet { draftStore.save(draft) }
+    }
     @Published var selectedTab: TopTab = .request
     @Published var requestSection: RequestSection = .body
     @Published var responseSection: ResponseSection = .pretty
@@ -44,6 +46,7 @@ final class AppModel: ObservableObject {
     private let httpClient: HTTPClient
     private let credentialStore: CredentialStoring
     private let clipboard: ClipboardWriting
+    private let draftStore: DraftStoring
     private let curlParser = CurlParser()
     private let curlExporter = CurlExporter()
     private var requestTask: Task<Void, Never>?
@@ -53,12 +56,20 @@ final class AppModel: ObservableObject {
         historyStore: HistoryStore,
         httpClient: HTTPClient = HTTPClient(),
         credentialStore: CredentialStoring = KeychainCredentialStore(),
-        clipboard: ClipboardWriting = SystemClipboardWriter()
+        clipboard: ClipboardWriting = SystemClipboardWriter(),
+        draftStore: DraftStoring = TransientDraftStore()
     ) {
         self.historyStore = historyStore
         self.httpClient = httpClient
         self.credentialStore = credentialStore
         self.clipboard = clipboard
+        self.draftStore = draftStore
+        var restoredDraft = draftStore.load() ?? .empty
+        if let credentialID = restoredDraft.authentication.credentialID,
+           let secret = try? credentialStore.load(id: credentialID) {
+            restoredDraft.authentication.secret = secret
+        }
+        draft = restoredDraft
     }
 
     var availableTabs: [TopTab] {

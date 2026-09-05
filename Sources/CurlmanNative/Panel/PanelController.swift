@@ -9,7 +9,12 @@ final class PanelController: NSWindowController, NSWindowDelegate {
     private let defaults = UserDefaults.standard
     private var expandedFrame: NSRect?
 
-    init(model: AppModel) {
+    init(
+        model: AppModel,
+        onboardingState: OnboardingState,
+        shortcutPreferences: ShortcutPreferences,
+        registerShortcut: @escaping (GlobalShortcut) -> Bool
+    ) {
         self.model = model
         let panel = InteractivePanel(
             contentRect: NSRect(x: 0, y: 0, width: 780, height: 520),
@@ -39,6 +44,9 @@ final class PanelController: NSWindowController, NSWindowDelegate {
         let hostingView = NSHostingView(
             rootView: RootView(
                 model: model,
+                onboardingState: onboardingState,
+                shortcutPreferences: shortcutPreferences,
+                registerShortcut: registerShortcut,
                 closeAction: { [weak self] in self?.hidePanel() },
                 minimizeAction: { [weak self] in self?.toggleCompact() },
                 dragAction: { [weak panel] event in panel?.performDrag(with: event) }
@@ -70,6 +78,10 @@ final class PanelController: NSWindowController, NSWindowDelegate {
         fatalError("init(coder:) has not been implemented")
     }
 
+    var isPanelVisible: Bool {
+        window?.isVisible ?? false
+    }
+
     func toggle() {
         guard let window else { return }
         if window.isVisible {
@@ -94,6 +106,13 @@ final class PanelController: NSWindowController, NSWindowDelegate {
     func hidePanel() {
         saveFrame()
         window?.orderOut(nil)
+    }
+
+    func showOnboarding() {
+        if model.isCompact {
+            restoreExpanded()
+        }
+        showPanel()
     }
 
     func toggleCompact() {

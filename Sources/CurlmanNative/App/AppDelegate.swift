@@ -4,6 +4,7 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let shortcutPreferences = ShortcutPreferences()
+    let onboardingState = OnboardingState()
 
     private var statusItem: NSStatusItem?
     private var panelController: PanelController?
@@ -17,11 +18,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             let history = try HistoryStore()
             let credentialStore = KeychainCredentialStore()
             try LegacyDataMigrator(curlmanCredentials: credentialStore).migrateIfNeeded(into: history)
-            let model = AppModel(historyStore: history, credentialStore: credentialStore)
+            onboardingState.prepareForLaunch(
+                isExistingInstallation: UserDefaults.standard.bool(forKey: "hasPositionedPanel") || !history.records.isEmpty
+            )
+            let model = AppModel(
+                historyStore: history,
+                credentialStore: credentialStore,
+                draftStore: UserDefaultsDraftStore()
+            )
             self.model = model
-            panelController = PanelController(model: model)
+            panelController = PanelController(
+                model: model,
+                onboardingState: onboardingState,
+                shortcutPreferences: shortcutPreferences,
+                registerShortcut: { [weak self] shortcut in self?.registerShortcut(shortcut) ?? false }
+            )
             configureStatusItem()
-            hotKey = GlobalHotKey { [weak self] in self?.panelController?.toggle() }
+            hotKey = GlobalHotKey { [weak self] in self?.handleGlobalShortcut() }
             if hotKey?.register(shortcutPreferences.shortcut) == false {
                 notifyShortcutConflict()
             }
@@ -74,6 +87,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         openWebPage(URL(string: "https://github.com/Raunaks068619/curlman#privacy-and-security")!)
     }
 
+    @objc private func showWelcome() {
+        onboardingState.startOver()
+        panelController?.showOnboarding()
+    }
+
     @objc private func checkForUpdates() {
         Task { [weak self] in
             guard let self else { return }
@@ -119,6 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         menu.addItem(NSMenuItem(title: "Check for Updates…", action: #selector(checkForUpdates), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Curlman Help", action: #selector(showHelp), keyEquivalent: "?"))
+        menu.addItem(NSMenuItem(title: "Show Welcome", action: #selector(showWelcome), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Privacy", action: #selector(showPrivacy), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "About Curlman", action: #selector(showAbout), keyEquivalent: ""))
         menu.addItem(.separator())
@@ -156,5 +175,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alert.informativeText = message
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
+    }
+
+    private func handleGlobalShortcut() {
+        let wasVisible = panelController?.isPanelVisible ?? false
+        onboardingState.recordShortcutInvocation(panelWasVisible: wasVisible)
+        panelController?.toggle()
     }
 }
