@@ -98,7 +98,9 @@ private struct BodyEditor: View {
                     text: $model.draft.body,
                     placeholder: model.draft.bodyKind == .json
                         ? "{\n  \"key\": \"value\"\n}"
-                        : "Enter request body"
+                        : "Enter request body",
+                    language: model.draft.bodyKind == .json ? .json : .plainText,
+                    contextID: "request-\(model.draft.id.uuidString)-\(model.draft.bodyKind.rawValue)"
                 )
             case .formURLEncoded:
                 KeyValueEditor(title: "Form fields", items: $model.draft.formItems)

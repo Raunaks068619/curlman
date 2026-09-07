@@ -96,6 +96,7 @@ The response interface stays hidden until a response exists. History is an on-de
 - Use Bearer, Basic, or API-key authentication with secrets stored in Keychain.
 - Control request timeout, redirects, and cookie-session behavior.
 - Automatically format imported JSON with syntax highlighting.
+- Fold nested JSON and search request or response content with Command-F.
 - Copy the currently edited request back to a runnable cURL command.
 - Inspect pretty or raw responses and response headers.
 - Retain request and response history automatically.

@@ -3,7 +3,6 @@ import SwiftUI
 struct ResponseView: View {
     @ObservedObject var model: AppModel
     let response: HTTPResponseSnapshot
-    @State private var responseSearch = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -56,16 +55,18 @@ struct ResponseView: View {
                     .accessibilityAddTraits(model.responseSection == section ? .isSelected : [])
                 }
                 Spacer()
-                TextField("Find in response", text: $responseSearch)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 190)
             }
             .padding(.horizontal, 12)
             .frame(height: 42)
             .background(Color(nsColor: .windowBackgroundColor))
             .overlay(alignment: .bottom) { Divider() }
 
-            CodeTextView(text: .constant(displayedText), isEditable: false)
+            CodeTextView(
+                text: .constant(displayedText),
+                isEditable: false,
+                language: displayedLanguage,
+                contextID: "response-\(response.id.uuidString)-\(model.responseSection.rawValue)"
+            )
         }
         .background(Color(nsColor: .textBackgroundColor))
     }
@@ -79,6 +80,15 @@ struct ResponseView: View {
                 .map { "\($0.key): \($0.value)" }
                 .joined(separator: "\n")
         }
+    }
+
+    private var displayedLanguage: CodeLanguage {
+        guard model.responseSection == .pretty,
+              let data = displayedText.data(using: .utf8),
+              (try? JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])) != nil else {
+            return .plainText
+        }
+        return .json
     }
 
     private func responseSectionLabel(_ section: ResponseSection) -> String {
