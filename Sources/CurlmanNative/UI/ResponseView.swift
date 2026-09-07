@@ -3,6 +3,7 @@ import SwiftUI
 struct ResponseView: View {
     @ObservedObject var model: AppModel
     let response: HTTPResponseSnapshot
+    @State private var responseFindRequest = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,6 +56,15 @@ struct ResponseView: View {
                     .accessibilityAddTraits(model.responseSection == section ? .isSelected : [])
                 }
                 Spacer()
+                Button {
+                    responseFindRequest += 1
+                } label: {
+                    Label("Find", systemImage: "magnifyingglass")
+                        .labelStyle(.iconOnly)
+                }
+                .buttonStyle(.borderless)
+                .keyboardShortcut("f", modifiers: .command)
+                .help("Find in response (Command-F)")
             }
             .padding(.horizontal, 12)
             .frame(height: 42)
@@ -65,7 +75,8 @@ struct ResponseView: View {
                 text: .constant(displayedText),
                 isEditable: false,
                 language: displayedLanguage,
-                contextID: "response-\(response.id.uuidString)-\(model.responseSection.rawValue)"
+                contextID: "response-\(response.id.uuidString)-\(model.responseSection.rawValue)",
+                findRequest: responseFindRequest
             )
         }
         .background(Color(nsColor: .textBackgroundColor))

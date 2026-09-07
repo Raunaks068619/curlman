@@ -21,6 +21,8 @@ final class JSONStructureScannerTests: XCTestCase {
         XCTAssertEqual(regions.map(\.openingLine), [1, 2])
         XCTAssertEqual(regions.map(\.itemCount), [2, 2])
         XCTAssertEqual(regions.map(\.summary), ["… 2 keys", "… 2 items"])
+        XCTAssertEqual(regions.map(\.collapsedSummary), ["… 2 keys }", "… 2 items ]"])
+        XCTAssertEqual(regions.first?.collapsedRange.length, (regions.first?.hiddenRange.length ?? 0) + 1)
     }
 
     func testIgnoresStructuralCharactersInsideStrings() throws {

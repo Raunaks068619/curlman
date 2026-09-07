@@ -3,6 +3,7 @@ import SwiftUI
 
 struct RequestView: View {
     @ObservedObject var model: AppModel
+    @State private var bodyFindRequest = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -50,6 +51,18 @@ struct RequestView: View {
                                 .accessibilityLabel(model.draft.parsedJSONBody == nil ? "Invalid JSON" : "Valid JSON")
                         }
                     }
+
+                    if model.draft.bodyKind == .json || model.draft.bodyKind == .raw {
+                        Button {
+                            bodyFindRequest += 1
+                        } label: {
+                            Label("Find", systemImage: "magnifyingglass")
+                                .labelStyle(.iconOnly)
+                        }
+                        .buttonStyle(.borderless)
+                        .keyboardShortcut("f", modifiers: .command)
+                        .help("Find in request body (Command-F)")
+                    }
                 }
             }
             .padding(.horizontal, 12)
@@ -58,7 +71,7 @@ struct RequestView: View {
             .overlay(alignment: .bottom) { Divider() }
 
             switch model.requestSection {
-            case .body: BodyEditor(model: model)
+            case .body: BodyEditor(model: model, findRequest: bodyFindRequest)
             case .params: KeyValueEditor(title: "Query parameters", items: $model.draft.queryItems)
             case .headers: KeyValueEditor(title: "Request headers", items: $model.draft.headers)
             case .auth: AuthenticationEditor(draft: $model.draft)
@@ -83,6 +96,7 @@ struct RequestView: View {
 
 private struct BodyEditor: View {
     @ObservedObject var model: AppModel
+    let findRequest: Int
 
     var body: some View {
         Group {
@@ -100,7 +114,8 @@ private struct BodyEditor: View {
                         ? "{\n  \"key\": \"value\"\n}"
                         : "Enter request body",
                     language: model.draft.bodyKind == .json ? .json : .plainText,
-                    contextID: "request-\(model.draft.id.uuidString)-\(model.draft.bodyKind.rawValue)"
+                    contextID: "request-\(model.draft.id.uuidString)-\(model.draft.bodyKind.rawValue)",
+                    findRequest: findRequest
                 )
             case .formURLEncoded:
                 KeyValueEditor(title: "Form fields", items: $model.draft.formItems)

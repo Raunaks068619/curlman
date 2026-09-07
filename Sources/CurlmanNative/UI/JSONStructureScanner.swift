@@ -25,8 +25,16 @@ struct JSONFoldRegion: Hashable, Identifiable, Sendable {
         NSRange(location: openingOffset + 1, length: max(closingOffset - openingOffset - 1, 0))
     }
 
+    var collapsedRange: NSRange {
+        NSRange(location: openingOffset + 1, length: max(closingOffset - openingOffset, 0))
+    }
+
     var summary: String {
         "… \(itemCount) \(kind.itemLabel)"
+    }
+
+    var collapsedSummary: String {
+        "\(summary) \(kind == .object ? "}" : "]")"
     }
 }
 

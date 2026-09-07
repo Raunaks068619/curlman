@@ -11,12 +11,11 @@ struct CodeTextView: View {
     var isEditable = true
     var placeholder = ""
     var language: CodeLanguage = .plainText
-    var allowsSearch = true
     var contextID = "default"
-    @State private var findRequest = 0
+    var findRequest = 0
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack(alignment: .topLeading) {
             SyntaxTextEditor(
                 text: $text,
                 isEditable: isEditable,
@@ -35,20 +34,6 @@ struct CodeTextView: View {
                     .allowsHitTesting(false)
             }
 
-            if allowsSearch {
-                Button {
-                    findRequest += 1
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .frame(width: 24, height: 24)
-                }
-                .buttonStyle(.borderless)
-                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .keyboardShortcut("f", modifiers: .command)
-                .padding(8)
-                .help("Find in content (Command-F)")
-                .accessibilityLabel("Find in content")
-            }
         }
         .background(Color(nsColor: .textBackgroundColor))
     }
@@ -173,7 +158,7 @@ private struct SyntaxTextEditor: NSViewRepresentable {
             let selections = editor.selectedRanges.compactMap { $0.rangeValue }
             let offsetsToExpand = regions.compactMap { region -> Int? in
                 guard collapsedOffsets.contains(region.openingOffset) else { return nil }
-                return selections.contains(where: { selectionIntersects($0, region.hiddenRange) })
+                return selections.contains(where: { selectionIntersects($0, region.collapsedRange) })
                     ? region.openingOffset
                     : nil
             }
@@ -299,7 +284,7 @@ private final class FoldingLayoutManager: NSLayoutManager, NSLayoutManagerDelega
         let indexes = Array(UnsafeBufferPointer(start: characterIndexes, count: glyphRange.length))
         for index in updatedGlyphs.indices {
             let characterIndex = indexes[index]
-            guard collapsedRegions.contains(where: { NSLocationInRange(characterIndex, $0.hiddenRange) }) else {
+            guard collapsedRegions.contains(where: { NSLocationInRange(characterIndex, $0.collapsedRange) }) else {
                 continue
             }
             updatedProperties[index] = .null
@@ -339,7 +324,7 @@ private final class FoldingLayoutManager: NSLayoutManager, NSLayoutManagerDelega
                 forGlyphRange: NSRange(location: openingGlyph, length: 1),
                 in: textContainer
             )
-            let summary = " … \(region.itemCount) \(region.kind.itemLabel)" as NSString
+            let summary = " \(region.collapsedSummary)" as NSString
             summary.draw(
                 at: NSPoint(x: origin.x + braceRect.maxX + 3, y: origin.y + braceRect.minY),
                 withAttributes: attributes
@@ -550,7 +535,7 @@ private final class LineNumberGutterView: NSView {
 
     private func isHidden(characterOffset: Int) -> Bool {
         regions.contains {
-            collapsedOffsets.contains($0.openingOffset) && NSLocationInRange(characterOffset, $0.hiddenRange)
+            collapsedOffsets.contains($0.openingOffset) && NSLocationInRange(characterOffset, $0.collapsedRange)
         }
     }
 }
