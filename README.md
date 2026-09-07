@@ -45,14 +45,20 @@ Both editions share the same focused workflow, automatic history, editable reque
 
 ## Install the native macOS app
 
-### [Download Curlman.dmg](https://github.com/Raunaks068619/curlman/releases/latest/download/Curlman.dmg)
+### Homebrew — recommended
+
+```sh
+brew install --cask Raunaks068619/curlman/curlman
+```
+
+Or [download Curlman.dmg](https://github.com/Raunaks068619/curlman/releases/latest/download/Curlman.dmg) directly.
 
 1. Open `Curlman.dmg`.
 2. Drag **Curlman** into Applications.
-3. On the first launch, Control-click Curlman, choose **Open**, then confirm.
+3. Open Curlman from Applications.
 4. Use the menu-bar icon or press `⌘⇧C` to show the panel.
 
-The public DMG is ad-hoc signed and is not Apple-notarized yet. The Control-click step is normally required only once.
+The native app is universal for Apple Silicon and Intel, signed with a Developer ID, notarized by Apple, and accepted by macOS Gatekeeper.
 
 ## Run the Electron app
 
@@ -179,7 +185,6 @@ scripts/                 Packaging and verification scripts
 
 ## Current limitations
 
-- The native DMG is not notarized with an Apple Developer ID.
 - Electron installers are not yet published for Windows or Linux.
 - Client certificates, proxy settings, cookie jars, and shell substitutions are not currently imported.
 
