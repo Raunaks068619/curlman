@@ -76,6 +76,10 @@ final class AppModel: ObservableObject {
         response == nil ? [.request, .history] : [.request, .response, .history]
     }
 
+    var canCopyAsCurl: Bool {
+        !draft.urlString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var filteredHistory: [HistoryRecord] {
         let query = historySearch.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return historyStore.records }

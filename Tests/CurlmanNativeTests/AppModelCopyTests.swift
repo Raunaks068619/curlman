@@ -3,6 +3,18 @@ import XCTest
 
 @MainActor
 final class AppModelCopyTests: XCTestCase {
+    func testCopyAvailabilityRequiresRequestInput() throws {
+        let model = AppModel(historyStore: try HistoryStore(inMemory: true))
+
+        XCTAssertFalse(model.canCopyAsCurl)
+
+        model.draft.urlString = "   \n"
+        XCTAssertFalse(model.canCopyAsCurl)
+
+        model.draft.urlString = "https://api.example.com/items"
+        XCTAssertTrue(model.canCopyAsCurl)
+    }
+
     func testCopiesTheCurrentEditedRequestAsCurl() throws {
         let clipboard = ClipboardSpy()
         let model = AppModel(

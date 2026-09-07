@@ -136,16 +136,18 @@ private struct RequestCommandBar: View {
             .frame(height: 24)
             .accessibilityLabel("Request URL or curl command")
 
-            Button(action: model.copyAsCurl) {
-                HStack(spacing: 5) {
-                    Image(systemName: model.didCopyCurl ? "checkmark" : "doc.on.doc")
-                    Text(model.didCopyCurl ? "Copied" : "Copy cURL")
+            if model.canCopyAsCurl {
+                Button(action: model.copyAsCurl) {
+                    HStack(spacing: 5) {
+                        Image(systemName: model.didCopyCurl ? "checkmark" : "doc.on.doc")
+                        Text(model.didCopyCurl ? "Copied" : "Copy cURL")
+                    }
+                    .frame(minWidth: 76)
                 }
-                .frame(minWidth: 76)
+                .buttonStyle(.bordered)
+                .help("Copy the current edited request as cURL")
+                .accessibilityLabel(model.didCopyCurl ? "cURL copied" : "Copy current request as cURL")
             }
-            .buttonStyle(.bordered)
-            .help("Copy the current edited request as cURL")
-            .accessibilityLabel(model.didCopyCurl ? "cURL copied" : "Copy current request as cURL")
 
             Button(action: model.send) {
                 HStack(spacing: 6) {
