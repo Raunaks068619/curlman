@@ -48,7 +48,9 @@ Both editions share the same focused workflow, automatic history, editable reque
 ### Homebrew — recommended
 
 ```sh
-brew install --cask Raunaks068619/curlman/curlman
+brew tap Raunaks068619/curlman
+brew trust Raunaks068619/curlman
+brew install --cask curlman
 ```
 
 Or [download Curlman.dmg](https://github.com/Raunaks068619/curlman/releases/latest/download/Curlman.dmg) directly.
