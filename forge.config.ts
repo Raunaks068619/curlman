@@ -9,7 +9,7 @@ import { VitePlugin } from '@electron-forge/plugin-vite';
 const config: ForgeConfig = {
   packagerConfig: {
     appBundleId: 'com.raunak.Curlman.Electron',
-    executableName: 'Curlman',
+    executableName: process.platform === 'linux' ? 'curlman' : 'Curlman',
     icon: 'Brand/Curlman-Icon',
     name: 'Curlman',
     extraResource: [

@@ -39,7 +39,7 @@ if (process.platform === 'darwin') {
   execFileSync('codesign', ['--force', '--deep', '--sign', '-', appBundle], { stdio: 'inherit' });
   execFileSync('codesign', ['--verify', '--deep', '--strict', appBundle], { stdio: 'inherit' });
 } else {
-  const executable = path.resolve(resourcesDirectory, '..', process.platform === 'win32' ? 'Curlman.exe' : 'Curlman');
+  const executable = path.resolve(resourcesDirectory, '..', process.platform === 'win32' ? 'Curlman.exe' : 'curlman');
   if (!fs.existsSync(executable)) throw new Error(`Packaged executable is missing: ${executable}`);
 }
 
