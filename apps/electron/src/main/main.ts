@@ -1,11 +1,13 @@
+import fs from 'node:fs';
 import path from 'node:path';
-import { app, BrowserWindow, clipboard, globalShortcut, ipcMain, Menu, nativeImage, session, Tray, type Rectangle } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, globalShortcut, ipcMain, Menu, nativeImage, session, Tray, type Rectangle } from 'electron';
 import { buildURL, enabledHeaders, exportCurl, parseCurl } from '../shared/curl';
 import { RequestDraftSchema, type RequestDraft, type ResponseSnapshot } from '../shared/models';
 import { CredentialVault, sanitizeRequest } from './credential-vault';
 import { HistoryStore } from './history-store';
 import { PreferencesStore } from './preferences-store';
 import { isTrustedFrame } from './security';
+import { compactBounds, shouldHideOnClose } from './desktop-lifecycle';
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -26,6 +28,7 @@ function createWindow(): BrowserWindow {
     minHeight: 360,
     show: false,
     skipTaskbar: true,
+    autoHideMenuBar: process.platform !== 'darwin',
     title: 'Curlman',
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     titleBarOverlay: process.platform === 'darwin' ? false : { color: '#00000000', symbolColor: '#777777' },
@@ -42,9 +45,11 @@ function createWindow(): BrowserWindow {
     if (destination !== window.webContents.getURL()) event.preventDefault();
   });
   window.on('close', (event) => {
-    if (!isQuitting) {
+    if (!isQuitting && shouldHideOnClose(tray !== null, registeredAccelerator !== null)) {
       event.preventDefault();
       window.hide();
+    } else {
+      isQuitting = true;
     }
   });
   window.on('show', () => {
@@ -121,6 +126,30 @@ function createTray(): Tray {
   return nextTray;
 }
 
+function createApplicationMenu(): Menu {
+  const curlmanActions: Electron.MenuItemConstructorOptions[] = [
+    { label: 'Open Curlman', accelerator: 'CmdOrCtrl+Shift+C', click: showMainWindow },
+    { label: 'New Request', accelerator: 'CmdOrCtrl+N', click: () => showTrayDestination('new-request') },
+    { label: 'History', accelerator: 'CmdOrCtrl+Y', click: () => showTrayDestination('history') },
+    { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => showTrayDestination('settings') },
+    { type: 'separator' },
+    { role: 'quit', label: 'Quit Curlman' },
+  ];
+
+  if (process.platform === 'darwin') {
+    return Menu.buildFromTemplate([
+      { label: 'Curlman', submenu: [{ role: 'about' }, { type: 'separator' }, ...curlmanActions] },
+      { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
+      { label: 'Window', submenu: [{ role: 'minimize' }, { role: 'front' }] },
+    ]);
+  }
+
+  return Menu.buildFromTemplate([
+    { label: 'File', submenu: curlmanActions },
+    { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
+  ]);
+}
+
 function registerIPC(history: HistoryStore, credentials: CredentialVault, preferences: PreferencesStore): void {
   ipcMain.handle('desktop:get-platform', (event) => {
     if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
@@ -133,6 +162,11 @@ function registerIPC(history: HistoryStore, credentials: CredentialVault, prefer
   ipcMain.handle('desktop:hide-window', (event) => {
     if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
     BrowserWindow.fromWebContents(event.sender)?.hide();
+  });
+  ipcMain.handle('desktop:copy-text', (event, input: unknown) => {
+    if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
+    if (typeof input !== 'string') throw new Error('Clipboard content must be text.');
+    clipboard.writeText(input);
   });
   ipcMain.handle('request:import-curl', (event, command: unknown) => {
     if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
@@ -164,6 +198,19 @@ function registerIPC(history: HistoryStore, credentials: CredentialVault, prefer
     if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
     activeRequest?.abort();
   });
+  ipcMain.handle('response:save', async (event, bodyBase64: unknown, suggestedName: unknown) => {
+    if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
+    if (typeof bodyBase64 !== 'string' || typeof suggestedName !== 'string') throw new Error('Invalid response data.');
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const options = {
+      defaultPath: path.basename(suggestedName) || 'response.txt',
+      title: 'Save Response',
+    };
+    const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options);
+    if (result.canceled || !result.filePath) return false;
+    fs.writeFileSync(result.filePath, Buffer.from(bodyBase64, 'base64'));
+    return true;
+  });
   ipcMain.handle('history:list', (event) => {
     if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
     return history.list();
@@ -178,6 +225,11 @@ function registerIPC(history: HistoryStore, credentials: CredentialVault, prefer
     if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
     if (typeof id !== 'string') throw new Error('Invalid history identifier.');
     history.togglePin(id);
+  });
+  ipcMain.handle('history:rename', (event, id: unknown, name: unknown) => {
+    if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
+    if (typeof id !== 'string' || typeof name !== 'string') throw new Error('Invalid history name.');
+    history.rename(id, name);
   });
   ipcMain.handle('history:delete', (event, id: unknown) => {
     if (!isTrustedFrame(event.senderFrame)) throw new Error('Untrusted IPC sender');
@@ -224,8 +276,8 @@ function toggleCompactWindow(): boolean {
     expandedBounds = mainWindow.getBounds();
     isCompact = true;
     mainWindow.setResizable(false);
-    const width = mainWindow.getBounds().width;
-    mainWindow.setSize(Math.max(500, Math.min(width, 660)), 52, true);
+    const size = compactBounds(mainWindow.getBounds());
+    mainWindow.setSize(size.width, size.height, true);
   }
   return isCompact;
 }
@@ -287,7 +339,17 @@ function requestHeaders(request: RequestDraft): Record<string, string> {
   return headers;
 }
 
-app.whenReady().then(() => {
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', showMainWindow);
+  app.on('activate', showMainWindow);
+}
+
+void app.whenReady().then(() => {
+  if (!hasSingleInstanceLock) return;
   if (process.platform === 'darwin') app.dock?.hide();
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   const userData = app.getPath('userData');
@@ -298,12 +360,21 @@ app.whenReady().then(() => {
     const preferences = new PreferencesStore(path.join(userData, 'preferences.json'));
     registerIPC(history, new CredentialVault(path.join(userData, 'credentials.enc.json')), preferences);
     mainWindow = createWindow();
-    tray = createTray();
+    Menu.setApplicationMenu(createApplicationMenu());
+    try {
+      tray = createTray();
+    } catch (error) {
+      tray = null;
+      console.warn('Curlman could not create a tray icon. Relaunch the app to reopen its window.', error);
+    }
     if (globalShortcut.register(preferences.shortcut.shortcut, toggleWindow)) {
       registeredAccelerator = preferences.shortcut.shortcut;
+    } else {
+      console.warn(`Curlman could not register ${preferences.shortcut.shortcut}. Change it in Settings.`);
     }
   }).catch((error: unknown) => {
     console.error('Curlman could not initialize local storage.', error);
+    dialog.showErrorBox('Curlman could not start', 'Local storage could not be initialized. Your existing data was not changed.');
     app.quit();
   });
 });

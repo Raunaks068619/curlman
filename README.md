@@ -36,10 +36,10 @@ Paste a multiline POST request, inspect its formatted JSON body, send it with th
 | --- | --- | --- |
 | Best for | Daily use on a Mac | A consistent app on macOS, Windows, and Linux |
 | Built with | Swift, SwiftUI, AppKit | Electron, React, TypeScript |
-| Runs from | Downloadable DMG | Source with Node.js and npm |
+| Runs from | Downloadable DMG | Windows/Linux installers or source |
 | Desktop behavior | Menu-bar panel, Keychain, native networking | Tray app, encrypted credential vault, Electron networking |
-| Requirements | Apple Silicon or Intel, macOS 14+ | Node.js 22.12+ |
-| Start | [Download the DMG](https://github.com/Raunaks068619/curlman/releases/latest/download/Curlman.dmg) | `npm install && npm run dev` |
+| Requirements | Apple Silicon or Intel, macOS 14+ | Windows/Linux x64, or Node.js 22.12+ for source |
+| Start | [Download the DMG](https://github.com/Raunaks068619/curlman/releases/latest/download/Curlman.dmg) | [Choose a Windows/Linux download](https://github.com/Raunaks068619/curlman/releases/latest) |
 
 Both editions share the same focused workflow, automatic history, editable requests, cURL export, compact mode, and keyboard-first interaction.
 
@@ -62,7 +62,18 @@ Or [download Curlman.dmg](https://github.com/Raunaks068619/curlman/releases/late
 
 The native app is universal for Apple Silicon and Intel, signed with a Developer ID, notarized by Apple, and accepted by macOS Gatekeeper.
 
-## Run the Electron app
+## Install on Windows or Linux
+
+Open the [latest Curlman release](https://github.com/Raunaks068619/curlman/releases/latest) and choose:
+
+- **Windows x64:** download the `Setup.exe` file and run it.
+- **Ubuntu/Debian x64:** download the `.deb` file and install it with your software installer or `sudo apt install ./curlman_*.deb`.
+- **Fedora/RHEL x64:** download the `.rpm` file and install it with your software installer or `sudo dnf install ./curlman-*.rpm`.
+- **Portable:** extract the matching Windows or Linux `.zip` package and run Curlman.
+
+The first community Electron packages are unsigned. Windows may show an Unknown Publisher or SmartScreen notice. Download only from this repository's Releases page and verify the adjacent SHA-256 checksum file. Linux tray icons and global shortcuts can vary by desktop environment, particularly under Wayland; relaunching Curlman always restores its existing window.
+
+## Run Electron from source
 
 Install [Node.js 22.12 or newer](https://nodejs.org/), then:
 
@@ -73,9 +84,7 @@ npm install
 npm run dev
 ```
 
-Electron opens as a tray/menu-bar utility and stays out of the Dock or taskbar. The same source and commands work on macOS, Windows, and Linux.
-
-> Prebuilt Electron installers are not published yet. The current cross-platform path runs directly from source.
+Electron opens as a tray/menu-bar utility and stays out of the Dock or taskbar while background access is available. The same source and commands work on macOS, Windows, and Linux.
 
 ## The workflow
 
@@ -99,8 +108,9 @@ The response interface stays hidden until a response exists. History is an on-de
 - Fold nested JSON and search request or response content with Command-F.
 - Copy the currently edited request back to a runnable cURL command.
 - Inspect pretty or raw responses and response headers.
+- Copy or save response content locally.
 - Retain request and response history automatically.
-- Search, restore, rerun, pin, and remove history entries.
+- Search, rename, restore, rerun, pin, and remove history entries.
 - Minimize into a fixed compact command strip.
 - Choose a custom global shortcut in Settings.
 - Follow system light/dark appearance, fonts, accent color, and accessibility settings.
@@ -188,7 +198,8 @@ scripts/                 Packaging and verification scripts
 
 ## Current limitations
 
-- Electron installers are not yet published for Windows or Linux.
+- Windows and Linux Electron packages are currently unsigned x64 community builds.
+- Linux tray icons and global shortcuts depend on desktop-environment support.
 - Client certificates, proxy settings, cookie jars, and shell substitutions are not currently imported.
 
 ## Contributing

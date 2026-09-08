@@ -12,6 +12,12 @@ export function ResponseWorkspace({ response }: { response: ResponseSnapshot }) 
   }, [response.bodyText]);
   const isJSON = response.mimeType?.includes('json') || /^[\s]*[{[]/.test(response.bodyText);
   const statusClass = response.statusCode && response.statusCode < 400 ? 'success' : 'failure';
+  const suggestedName = isJSON ? 'response.json' : 'response.txt';
+  const displayedText = section === 'Pretty'
+    ? prettyBody
+    : section === 'Raw'
+      ? response.bodyText
+      : Object.entries(response.headers).map(([name, value]) => `${name}: ${value}`).join('\n');
 
   return (
     <section className="workspace response-workspace">
@@ -20,6 +26,10 @@ export function ResponseWorkspace({ response }: { response: ResponseSnapshot }) 
         <span>{(response.durationMs / 1000).toFixed(2)} s</span>
         <span>{formatBytes(response.receivedByteCount)}</span>
         <time dateTime={response.receivedAt}>{new Date(response.receivedAt).toLocaleString()}</time>
+        <div className="response-actions">
+          <button type="button" onClick={() => void window.curlman.copyText(displayedText)}>Copy</button>
+          <button type="button" onClick={() => void window.curlman.saveResponse(response.bodyBase64, suggestedName)}>Save</button>
+        </div>
       </div>
       <div className="section-toolbar">
         <nav className="section-tabs" aria-label="Response sections">

@@ -25,12 +25,13 @@ describe('HistoryStore', () => {
     const id = store.begin(request);
     store.finalize(id, successfulResponse());
     store.togglePin(id);
+    store.rename(id, 'Create item');
 
     const reopened = await HistoryStore.open(databasePath, wasmPath);
     const entries = reopened.list();
 
     expect(entries).toHaveLength(1);
-    expect(entries[0]).toMatchObject({ id, isPinned: true, request: { method: 'POST' }, response: { statusCode: 201 } });
+    expect(entries[0]).toMatchObject({ id, displayName: 'Create item', isPinned: true, request: { method: 'POST' }, response: { statusCode: 201 } });
   });
 });
 

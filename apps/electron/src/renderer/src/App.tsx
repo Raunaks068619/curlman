@@ -142,6 +142,30 @@ export function App() {
     await refreshHistory();
   };
 
+  const renameHistory = async (id: string, name: string) => {
+    await window.curlman.renameHistory(id, name);
+    await refreshHistory();
+  };
+
+  const rerunHistory = async (entry: HistoryEntry) => {
+    if (isSending) return;
+    try {
+      const restored = await window.curlman.restoreHistory(entry.id);
+      setDraft(restored.request);
+      setError(undefined);
+      setIsSending(true);
+      const result = await window.curlman.executeRequest(restored.request);
+      setResponse(result);
+      await refreshHistory();
+      await expand();
+      setTopTab('Response');
+    } catch (cause) {
+      setError(messageFrom(cause));
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <main className={`shell platform-${platform} ${isCompact ? 'compact' : ''}`}>
       <header className="titlebar">
@@ -182,7 +206,7 @@ export function App() {
           }}
           autoFocus
         />
-        <button className="secondary-action" type="button" onClick={() => void copyAsCurl()}>{didCopy ? 'Copied' : 'Copy cURL'}</button>
+        {draft.urlString.trim() && <button className="secondary-action" type="button" onClick={() => void copyAsCurl()}>{didCopy ? 'Copied' : 'Copy cURL'}</button>}
         <button
           className="compact-expand"
           type="button"
@@ -222,6 +246,8 @@ export function App() {
           entries={history}
           onRestore={(entry, openResponse) => void restoreHistory(entry, openResponse)}
           onTogglePin={(id) => void toggleHistoryPin(id)}
+          onRename={(id, name) => void renameHistory(id, name)}
+          onRerun={(entry) => void rerunHistory(entry)}
           onDelete={(id) => void deleteHistory(id)}
           onClear={() => void window.curlman.clearHistory().then(refreshHistory)}
         />

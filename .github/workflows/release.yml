@@ -96,11 +96,14 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - name: Install Linux packaging tools
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
       - run: npm run make:electron
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: out/make/**/*
+          path: dist-electron/**/*
           if-no-files-found: error
 
   publish:

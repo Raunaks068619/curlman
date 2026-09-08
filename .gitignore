@@ -11,3 +11,4 @@ node_modules/
 **/.vite/
 dist/
 out/
+dist-electron/

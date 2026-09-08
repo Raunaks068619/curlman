@@ -44,6 +44,16 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Verify packaged Electron runtime
-        if: matrix.os == 'macos-15'
-        run: npm run package:electron
+      - name: Install Linux packaging tools
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm
+
+      - name: Build and verify Electron packages
+        run: npm run make:electron
+
+      - name: Upload Electron packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: curlman-${{ matrix.os }}
+          path: dist-electron/**/*
+          if-no-files-found: error

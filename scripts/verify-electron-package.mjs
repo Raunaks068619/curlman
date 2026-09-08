@@ -18,6 +18,7 @@ const appIcon = path.join(resourcesDirectory, 'Curlman-Icon.png');
 const trayIcon = path.join(resourcesDirectory, 'Curlman-TrayTemplate.png');
 const retinaTrayIcon = path.join(resourcesDirectory, 'Curlman-TrayTemplate@2x.png');
 const mainSource = fs.readFileSync(mainBundle, 'utf8');
+const packageMetadataPath = path.join(appDirectory, 'package.json');
 
 if (/require\(["']sql\.js["']\)/.test(mainSource)) {
   throw new Error('The packaged main process still requires an external sql.js module.');
@@ -27,13 +28,22 @@ if (!fs.existsSync(wasm)) throw new Error(`Packaged SQLite WASM is missing: ${wa
 if (!fs.existsSync(appIcon)) throw new Error(`Packaged app icon is missing: ${appIcon}`);
 if (!fs.existsSync(trayIcon)) throw new Error(`Packaged tray icon is missing: ${trayIcon}`);
 if (!fs.existsSync(retinaTrayIcon)) throw new Error(`Packaged Retina tray icon is missing: ${retinaTrayIcon}`);
+if (!fs.existsSync(packageMetadataPath)) throw new Error(`Packaged metadata is missing: ${packageMetadataPath}`);
+
+const packageMetadata = JSON.parse(fs.readFileSync(packageMetadataPath, 'utf8'));
+if (packageMetadata.name !== 'curlman') throw new Error('The packaged application name is not Curlman.');
+if (!packageMetadata.version) throw new Error('The packaged application has no version.');
+
 if (process.platform === 'darwin') {
   const appBundle = path.resolve(resourcesDirectory, '..', '..');
   execFileSync('codesign', ['--force', '--deep', '--sign', '-', appBundle], { stdio: 'inherit' });
   execFileSync('codesign', ['--verify', '--deep', '--strict', appBundle], { stdio: 'inherit' });
+} else {
+  const executable = path.resolve(resourcesDirectory, '..', process.platform === 'win32' ? 'Curlman.exe' : 'Curlman');
+  if (!fs.existsSync(executable)) throw new Error(`Packaged executable is missing: ${executable}`);
 }
 
-process.stdout.write('Packaged Electron app contains its runtime, renderer, SQLite, and tray icons.\n');
+process.stdout.write(`Packaged Curlman ${packageMetadata.version} contains its runtime, renderer, SQLite, tray icons, and executable.\n`);
 
 function findFiles(directory, matches) {
   if (!fs.existsSync(directory)) return [];

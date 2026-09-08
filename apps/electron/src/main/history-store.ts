@@ -71,6 +71,11 @@ export class HistoryStore {
     this.persist();
   }
 
+  rename(id: string, name: string): void {
+    this.database.run('UPDATE history SET display_name = ? WHERE id = ?', [name.trim(), id]);
+    this.persist();
+  }
+
   delete(id: string): void {
     this.database.run('DELETE FROM history WHERE id = ?', [id]);
     this.persist();
