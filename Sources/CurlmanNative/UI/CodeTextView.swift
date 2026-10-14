@@ -279,7 +279,7 @@ private final class FoldingLayoutManager: NSLayoutManager, NSLayoutManagerDelega
     ) -> Int {
         guard !collapsedRegions.isEmpty else { return 0 }
 
-        let updatedGlyphs = Array(UnsafeBufferPointer(start: glyphs, count: glyphRange.length))
+        var updatedGlyphs = Array(UnsafeBufferPointer(start: glyphs, count: glyphRange.length))
         var updatedProperties = Array(UnsafeBufferPointer(start: properties, count: glyphRange.length))
         let indexes = Array(UnsafeBufferPointer(start: characterIndexes, count: glyphRange.length))
         for index in updatedGlyphs.indices {
@@ -287,7 +287,10 @@ private final class FoldingLayoutManager: NSLayoutManager, NSLayoutManagerDelega
             guard collapsedRegions.contains(where: { NSLocationInRange(characterIndex, $0.collapsedRange) }) else {
                 continue
             }
-            updatedProperties[index] = .null
+            // Zero-advance control glyphs collapse both text and newlines without
+            // TextKit's null-glyph run overflow on documents larger than 16K.
+            updatedProperties[index] = .controlCharacter
+            updatedGlyphs[index] = 0
         }
 
         updatedGlyphs.withUnsafeBufferPointer { glyphBuffer in
@@ -307,6 +310,17 @@ private final class FoldingLayoutManager: NSLayoutManager, NSLayoutManagerDelega
             }
         }
         return glyphRange.length
+    }
+
+    func layoutManager(
+        _ layoutManager: NSLayoutManager,
+        shouldUse action: NSLayoutManager.ControlCharacterAction,
+        forControlCharacterAt charIndex: Int
+    ) -> NSLayoutManager.ControlCharacterAction {
+        if collapsedRegions.contains(where: { NSLocationInRange(charIndex, $0.collapsedRange) }) {
+            return .zeroAdvancement
+        }
+        return action
     }
 
     override func drawGlyphs(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
@@ -413,7 +427,9 @@ private final class LineNumberGutterView: NSView {
     }
 
     @objc private func refresh() {
-        positionFoldButtons()
+        // Bounds notifications can arrive while TextKit is invalidating glyphs.
+        // Defer queries until the view layout pass instead of re-entering it.
+        needsLayout = true
         needsDisplay = true
     }
 
@@ -429,15 +445,16 @@ private final class LineNumberGutterView: NSView {
     override func draw(_ dirtyRect: NSRect) {
         guard let textView,
               let layoutManager = textView.layoutManager,
-              let textContainer = textView.textContainer,
-              let scrollView else { return }
+              let textContainer = textView.textContainer else { return }
 
         NSColor.underPageBackgroundColor.setFill()
         bounds.fill()
         NSColor.separatorColor.withAlphaComponent(0.7).setFill()
         NSRect(x: bounds.maxX - 0.5, y: bounds.minY, width: 0.5, height: bounds.height).fill()
 
-        let visibleRect = scrollView.contentView.bounds
+        // The document view can have a nonzero frame origin after it grows.
+        // Glyph queries must use document coordinates, not clip-view bounds.
+        let visibleRect = textView.visibleRect
         let glyphRange = layoutManager.glyphRange(forBoundingRect: visibleRect, in: textContainer)
         let characterRange = layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
         let source = textView.string as NSString
@@ -461,7 +478,10 @@ private final class LineNumberGutterView: NSView {
             if !isHidden(characterOffset: index) {
                 let glyphIndex = layoutManager.glyphIndexForCharacter(at: min(index, max(source.length - 1, 0)))
                 let fragment = layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: nil)
-                let y = fragment.minY + textView.textContainerInset.height - visibleRect.minY
+                let y = convert(
+                    NSPoint(x: 0, y: fragment.minY + textView.textContainerOrigin.y),
+                    from: textView
+                ).y
                 drawLineNumber(line, y: y + 1, attributes: attributes)
             }
 
@@ -502,9 +522,7 @@ private final class LineNumberGutterView: NSView {
 
     private func positionFoldButtons() {
         guard let textView,
-              let layoutManager = textView.layoutManager,
-              let scrollView else { return }
-        let visibleRect = scrollView.contentView.bounds
+              let layoutManager = textView.layoutManager else { return }
 
         for region in regions {
             guard let button = foldButtons[region.openingOffset] else { continue }
@@ -519,7 +537,10 @@ private final class LineNumberGutterView: NSView {
             }
             let glyphIndex = layoutManager.glyphIndexForCharacter(at: region.openingOffset)
             let fragment = layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: nil)
-            let y = fragment.minY + textView.textContainerInset.height - visibleRect.minY - 1
+            let y = convert(
+                NSPoint(x: 0, y: fragment.minY + textView.textContainerOrigin.y),
+                from: textView
+            ).y - 1
             button.frame = NSRect(x: 2, y: y, width: 16, height: 16)
             button.isHidden = y < -16 || y > bounds.height
             let collapsed = collapsedOffsets.contains(region.openingOffset)

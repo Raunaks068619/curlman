@@ -39,7 +39,7 @@ Paste a multiline POST request, inspect its formatted JSON body, send it with th
 | Runs from | Downloadable DMG | Windows/Linux installers or source |
 | Desktop behavior | Menu-bar panel, Keychain, native networking | Tray app, encrypted credential vault, Electron networking |
 | Requirements | Apple Silicon or Intel, macOS 14+ | Windows/Linux x64, or Node.js 22.12+ for source |
-| Start | [Download the DMG](https://github.com/Raunaks068619/curlman/releases/latest/download/Curlman.dmg) | [Choose a Windows/Linux download](https://github.com/Raunaks068619/curlman/releases/latest) |
+| Start | [Download the DMG](https://github.com/Raunaks068619/curlman/releases/latest/download/Curlman.dmg) | [Choose a Windows/Linux download](https://github.com/Raunaks068619/curlman/releases/tag/v0.4.0) |
 
 Both editions share the same focused workflow, automatic history, editable requests, cURL export, compact mode, and keyboard-first interaction.
 
@@ -64,7 +64,7 @@ The native app is universal for Apple Silicon and Intel, signed with a Developer
 
 ## Install on Windows or Linux
 
-Open the [latest Curlman release](https://github.com/Raunaks068619/curlman/releases/latest) and choose:
+Open the [Electron v0.4.0 release](https://github.com/Raunaks068619/curlman/releases/tag/v0.4.0) (unchanged by the native macOS v0.4.1 patch) and choose:
 
 - **Windows x64:** download the `Setup.exe` file and run it.
 - **Ubuntu/Debian x64:** download the `.deb` file and install it with your software installer or `sudo apt install ./curlman_*.deb`.
